@@ -1,14 +1,7 @@
-//
-//  GameViewController.swift
-//  Multiplayer
-//
-//  Created by Nick Kallen on 8/26/17.
-//  Copyright © 2017 Nick Kallen. All rights reserved.
-//
-
 import UIKit
 import QuartzCore
 import SceneKit
+import GameKit
 
 class GameViewController: UIViewController {
 
@@ -64,6 +57,25 @@ class GameViewController: UIViewController {
         // add a tap gesture recognizer
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         scnView.addGestureRecognizer(tapGesture)
+
+
+        // MARK: - GameKit
+
+        let localPlayer = GKLocalPlayer.localPlayer()
+        localPlayer.authenticateHandler = { (viewController, error) in
+            if error == nil,
+                let viewController = viewController,
+                let delegate = UIApplication.shared.delegate,
+                let window = delegate.window,
+                let rootViewController = window?.rootViewController {
+                rootViewController.present(viewController, animated: true) { () in
+                    print("completed")
+                }
+            }
+        }
+        if !localPlayer.isAuthenticated {
+
+        }
     }
     
     @objc
