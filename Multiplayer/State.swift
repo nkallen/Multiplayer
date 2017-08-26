@@ -64,7 +64,7 @@ struct FullNodeState: NodeState, Equatable {
     }
 }
 
-struct Packet: Equatable {
+struct Packet: Equatable, Comparable {
     static let maxInputsPerPacket = 32
     static let maxStateUpdatesPerPacket = 64
 
@@ -74,6 +74,10 @@ struct Packet: Equatable {
     static func ==(lhs: Packet, rhs: Packet) -> Bool {
         return lhs.sequence == rhs.sequence &&
             lhs.updates == rhs.updates
+    }
+
+    static func <(lhs: Packet, rhs: Packet) -> Bool {
+        return lhs.sequence < rhs.sequence
     }
 }
 
@@ -116,7 +120,27 @@ struct HasPriority: Hashable {
 }
 
 class JitterBuffer {
-    let buffer = [Packet]()
+    var buffer = [Packet]()
+    let delay: Int
+
+    var last: Int = -1
+
+    init(delay: Int) {
+        self.delay = delay
+    }
+
+    func push(_ packet: Packet) {
+        buffer.append(packet)
+        buffer.sort()
+    }
+
+    func pop() -> Packet? {
+        if buffer.count < delay { return nil }
+        let next = buffer.removeFirst()
+        if next.sequence <= last { return pop() }
+        last = next.sequence
+        return next
+    }
 }
 
 protocol DataConvertible {
