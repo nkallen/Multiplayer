@@ -9,6 +9,29 @@ protocol NodeState {
     var angularVelocity: float3 { get }
 }
 
+extension NodeState {
+    func isEqual(to rhs: NodeState) -> Bool {
+        let lhs = self
+        return lhs.id == rhs.id &&
+            lhs.position == rhs.position &&
+            lhs.orientation == rhs.orientation &&
+            lhs.linearVelocity == rhs.linearVelocity &&
+            lhs.angularVelocity == rhs.angularVelocity
+    }
+}
+
+func ==(lhs: [NodeState], rhs: [NodeState]) -> Bool {
+    guard lhs.count == rhs.count else { return false }
+
+    for i in 0..<lhs.count {
+        let leftItem: NodeState = lhs[i], rightItem: NodeState = rhs[i]
+        if !leftItem.isEqual(to: rightItem) {
+            return false
+        }
+    }
+    return true
+}
+
 struct CompactNodeState: NodeState, Equatable {
     let id: Int
     let position: float3
@@ -19,7 +42,9 @@ struct CompactNodeState: NodeState, Equatable {
     static func ==(lhs: CompactNodeState, rhs: CompactNodeState) -> Bool {
         return lhs.id == rhs.id &&
             lhs.position == rhs.position &&
-            lhs.orientation == rhs.orientation
+            lhs.orientation == rhs.orientation &&
+            lhs.linearVelocity == rhs.linearVelocity &&
+            lhs.angularVelocity == rhs.angularVelocity
     }
 }
 
@@ -39,16 +64,55 @@ struct FullNodeState: NodeState, Equatable {
     }
 }
 
-struct Packet {
+struct Packet: Equatable {
     static let maxInputsPerPacket = 32
     static let maxStateUpdatesPerPacket = 64
 
     let sequence: Int
-    let updates = [FullNodeState]()
+    let updates: [NodeState]
+
+    static func ==(lhs: Packet, rhs: Packet) -> Bool {
+        return lhs.sequence == rhs.sequence &&
+            lhs.updates == rhs.updates
+    }
 }
 
 class PriorityAccumulator {
-    var priorities = [SCNNode:Float]()
+    var all = [HasPriority]()
+
+    var priorities = [HasPriority:Float]()
+
+    func update() {
+        for item in all {
+            priorities[item] = (priorities[item] ?? 0) + item.intrinsicPriority
+        }
+    }
+
+    func top(_ count: Int) -> [HasPriority] {
+        let sorted = priorities.sorted { (np1, np2) -> Bool in
+            let (_, priority1) = np1
+            let (_, priority2) = np2
+
+            return priority1 > priority2
+        }
+        var result = [HasPriority]()
+        for (hasPriority, _) in sorted[0..<count] {
+            priorities[hasPriority] = 0
+            result.append(hasPriority)
+        }
+        return result
+    }
+}
+
+struct HasPriority: Hashable {
+    var hashValue: Int { return node.hashValue }
+
+    static func ==(lhs: HasPriority, rhs: HasPriority) -> Bool {
+        return lhs.node == rhs.node
+    }
+
+    let intrinsicPriority: Float
+    let node: SCNNode
 }
 
 class JitterBuffer {
@@ -79,4 +143,4 @@ extension float3: DataConvertible {}
 extension float4: DataConvertible {}
 extension FullNodeState: DataConvertible {}
 extension CompactNodeState: DataConvertible {}
-
+extension Packet: DataConvertible {}

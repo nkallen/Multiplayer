@@ -3,7 +3,7 @@ import QuartzCore
 import SceneKit
 import GameKit
 
-class GameViewController: UIViewController, GKLocalPlayerListener {
+class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -87,17 +87,27 @@ class GameViewController: UIViewController, GKLocalPlayerListener {
         print(1, localPlayer.isAuthenticated)
         let matchRequest = GKMatchRequest()
         matchRequest.minPlayers = 2
-        print(2)
         GKMatchmaker.shared().findMatch(for: matchRequest) { (match, error) in
-            print("match, error", match, error)
             if let match = match {
-                match.chooseBestHostingPlayer { player in
-                    print("best host", player, localPlayer)
-                    self.host = player
+                match.delegate = self
+                match.chooseBestHostingPlayer { best in
+                    if let player = best {
+                        self.host = player
+                    } else {
+                        self.host = match.players.first
+                    }
                 }
             }
         }
     }
+
+    func match(_ match: GKMatch, didReceive data: Data, fromRemotePlayer player: GKPlayer) {
+    }
+
+    func match(_ match: GKMatch, player: GKPlayer, didChange state: GKPlayerConnectionState) {
+        print("player", player, "changed state to", state)
+    }
+
 
     @objc
     func handleTap(_ gestureRecognize: UIGestureRecognizer) {
