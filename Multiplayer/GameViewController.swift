@@ -3,8 +3,7 @@ import QuartzCore
 import SceneKit
 import GameKit
 
-class GameViewController: UIViewController {
-
+class GameViewController: UIViewController, GKLocalPlayerListener {
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -58,26 +57,48 @@ class GameViewController: UIViewController {
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         scnView.addGestureRecognizer(tapGesture)
 
+        setupGame()
+    }
 
-        // MARK: - GameKit
+    // MARK: - GameKit
 
+    var host: GKPlayer?
+
+    func setupGame() {
         let localPlayer = GKLocalPlayer.localPlayer()
         localPlayer.authenticateHandler = { (viewController, error) in
-            if error == nil,
-                let viewController = viewController,
-                let delegate = UIApplication.shared.delegate,
-                let window = delegate.window,
-                let rootViewController = window?.rootViewController {
-                rootViewController.present(viewController, animated: true) { () in
-                    print("completed")
+            if error == nil {
+                if let viewController = viewController,
+                    let delegate = UIApplication.shared.delegate,
+                    let window = delegate.window,
+                    let rootViewController = window?.rootViewController {
+                    rootViewController.present(viewController, animated: true) { () in
+                        print("completed")
+                    }
+                } else {
+                    self.startMatch()
                 }
             }
         }
-        if !localPlayer.isAuthenticated {
+    }
 
+    func startMatch() {
+        let localPlayer = GKLocalPlayer.localPlayer()
+        print(1, localPlayer.isAuthenticated)
+        let matchRequest = GKMatchRequest()
+        matchRequest.minPlayers = 2
+        print(2)
+        GKMatchmaker.shared().findMatch(for: matchRequest) { (match, error) in
+            print("match, error", match, error)
+            if let match = match {
+                match.chooseBestHostingPlayer { player in
+                    print("best host", player, localPlayer)
+                    self.host = player
+                }
+            }
         }
     }
-    
+
     @objc
     func handleTap(_ gestureRecognize: UIGestureRecognizer) {
         // retrieve the SCNView
