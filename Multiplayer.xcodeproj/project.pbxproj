@@ -15,6 +15,8 @@
 		9E1A56421F51F0B300A3773F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9E1A56401F51F0B300A3773F /* LaunchScreen.storyboard */; };
 		9E1A564D1F51F0B400A3773F /* MultiplayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1A564C1F51F0B400A3773F /* MultiplayerTests.swift */; };
 		9E1A56581F51F0B400A3773F /* MultiplayerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1A56571F51F0B400A3773F /* MultiplayerUITests.swift */; };
+		9E1A56661F51F10100A3773F /* State.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1A56651F51F10100A3773F /* State.swift */; };
+		9E1A56681F51F9F200A3773F /* StateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1A56671F51F9F200A3773F /* StateTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +51,8 @@
 		9E1A56531F51F0B400A3773F /* MultiplayerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MultiplayerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E1A56571F51F0B400A3773F /* MultiplayerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiplayerUITests.swift; sourceTree = "<group>"; };
 		9E1A56591F51F0B400A3773F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9E1A56651F51F10100A3773F /* State.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = State.swift; sourceTree = "<group>"; };
+		9E1A56671F51F9F200A3773F /* StateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,6 +110,7 @@
 				9E1A563E1F51F0B300A3773F /* Assets.xcassets */,
 				9E1A56401F51F0B300A3773F /* LaunchScreen.storyboard */,
 				9E1A56431F51F0B300A3773F /* Info.plist */,
+				9E1A56651F51F10100A3773F /* State.swift */,
 			);
 			path = Multiplayer;
 			sourceTree = "<group>";
@@ -115,6 +120,7 @@
 			children = (
 				9E1A564C1F51F0B400A3773F /* MultiplayerTests.swift */,
 				9E1A564E1F51F0B400A3773F /* Info.plist */,
+				9E1A56671F51F9F200A3773F /* StateTests.swift */,
 			);
 			path = MultiplayerTests;
 			sourceTree = "<group>";
@@ -262,6 +268,7 @@
 			files = (
 				9E1A563A1F51F0B300A3773F /* GameViewController.swift in Sources */,
 				9E1A56361F51F0B300A3773F /* AppDelegate.swift in Sources */,
+				9E1A56661F51F10100A3773F /* State.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -270,6 +277,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9E1A564D1F51F0B400A3773F /* MultiplayerTests.swift in Sources */,
+				9E1A56681F51F9F200A3773F /* StateTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
