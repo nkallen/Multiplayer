@@ -46,22 +46,22 @@ class StateTests: XCTestCase {
     }
 
     func testJitterBuffer() {
-        let p1 = Packet(sequence: 1, updates: [])
-        let p2 = Packet(sequence: 2, updates: [])
-        let p3 = Packet(sequence: 3, updates: [])
-        let p4 = Packet(sequence: 4, updates: [])
-        let jitterBuffer = JitterBuffer(delay: 3)
+        let p1 = Packet(sequence: 0, updates: [])
+        let p2 = Packet(sequence: 1, updates: [])
+        let p3 = Packet(sequence: 2, updates: [])
+        let p4 = Packet(sequence: 3, updates: [])
+        let jitterBuffer = JitterBuffer(capacity: 1024, minDelay: 3)
 
-        XCTAssertNil(jitterBuffer.pop())
+        XCTAssertNil(jitterBuffer[0])
         jitterBuffer.push(p3)
-        XCTAssertNil(jitterBuffer.pop())
+        XCTAssertNil(jitterBuffer[1])
         jitterBuffer.push(p1)
-        XCTAssertNil(jitterBuffer.pop())
+        XCTAssertNil(jitterBuffer[2])
         jitterBuffer.push(p2)
-        XCTAssertEqual(p1, jitterBuffer.pop())
+        XCTAssertEqual(p1, jitterBuffer[3])
         jitterBuffer.push(p1)
-        XCTAssertNil(jitterBuffer.pop())
+        XCTAssertEqual(p2, jitterBuffer[4])
         jitterBuffer.push(p4)
-        XCTAssertEqual(p2, jitterBuffer.pop())
+        XCTAssertEqual(p3, jitterBuffer[5])
     }
 }

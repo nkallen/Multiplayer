@@ -68,7 +68,7 @@ struct Packet: Equatable, Comparable {
     static let maxInputsPerPacket = 32
     static let maxStateUpdatesPerPacket = 64
 
-    let sequence: Int
+    let sequence: Int16
     let updates: [NodeState]
 
     static func ==(lhs: Packet, rhs: Packet) -> Bool {
@@ -120,27 +120,31 @@ struct HasPriority: Hashable {
 }
 
 class JitterBuffer {
-    var buffer = [Packet]()
-    let delay: Int
+    var buffer: [Packet?]
+    let minDelay: Int
 
-    var last: Int = -1
+    var lastSeen: Int16 = -1
+    var count = 0
 
-    init(delay: Int) {
-        self.delay = delay
+    init(capacity: Int, minDelay: Int = 5) {
+        assert(minDelay >= 0)
+
+        self.buffer = [Packet?](repeating: nil, count: capacity)
+        self.minDelay = minDelay
     }
 
     func push(_ packet: Packet) {
-        buffer.append(packet)
-        buffer.sort()
+        buffer[Int(packet.sequence) % buffer.count] = packet
+        lastSeen = max(packet.sequence, lastSeen)
     }
 
-    func pop() -> Packet? {
-        if buffer.count < delay { return nil }
-        let next = buffer.removeFirst()
-        if next.sequence <= last { return pop() }
-        last = next.sequence
-        return next
+    subscript(sequence: Int) -> Packet? {
+        let sequence = sequence - minDelay
+        guard sequence >= 0 else { return nil }
+
+        return buffer[sequence]
     }
+
 }
 
 protocol DataConvertible {
