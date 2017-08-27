@@ -12,7 +12,7 @@ class StateTests: XCTestCase {
         let nodeState = CompactNodeState(id: 1, position: position, eulerAngles: eulerAngles)
 
         let data = nodeState.data
-        let deserialized = CompactNodeState(data: data)!
+        let deserialized = CompactNodeState(dataWrapper: DataWrapper(data))!
         XCTAssertEqual(nodeState, deserialized)
     }
 
@@ -20,7 +20,7 @@ class StateTests: XCTestCase {
         let nodeState = FullNodeState(id: 1, position: position, eulerAngles: eulerAngles, linearVelocity: linearVelocity, angularVelocity: angularVelocity)
 
         let data = nodeState.data
-        let deserialized = FullNodeState(data: data)!
+        let deserialized = FullNodeState(dataWrapper: DataWrapper(data))!
         XCTAssertEqual(nodeState, deserialized)
     }
 
@@ -32,7 +32,7 @@ class StateTests: XCTestCase {
         let updates: [NodeState] = [nodeState1, nodeState2]
         let packet = Packet(sequence: 5, updates: updates)
         let data = packet.data
-        let deserialized = Packet(data: data)
+        let deserialized = Packet(dataWrapper: DataWrapper(data))
         XCTAssertEqual(packet, deserialized)
     }
 

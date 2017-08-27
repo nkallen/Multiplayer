@@ -18,6 +18,7 @@
 		9E1A56661F51F10100A3773F /* State.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1A56651F51F10100A3773F /* State.swift */; };
 		9E1A56681F51F9F200A3773F /* StateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1A56671F51F9F200A3773F /* StateTests.swift */; };
 		9EAAF2091F520DFA007F210A /* GameKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9EAAF2081F520DFA007F210A /* GameKit.framework */; };
+		9ED312641F535DEA0078AB0E /* packets.dat in Resources */ = {isa = PBXBuildFile; fileRef = 9EF5261B1F535DA5004275BC /* packets.dat */; };
 		9EDF9FF41F53370D00242B7D /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9EDF9FF31F53370D00242B7D /* NetworkExtension.framework */; };
 /* End PBXBuildFile section */
 
@@ -58,6 +59,7 @@
 		9EAAF2081F520DFA007F210A /* GameKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GameKit.framework; path = System/Library/Frameworks/GameKit.framework; sourceTree = SDKROOT; };
 		9EDF9FF31F53370D00242B7D /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
 		9EDF9FF51F53370D00242B7D /* Multiplayer.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Multiplayer.entitlements; sourceTree = "<group>"; };
+		9EF5261B1F535DA5004275BC /* packets.dat */ = {isa = PBXFileReference; lastKnownFileType = file; path = packets.dat; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,6 +113,7 @@
 		9E1A56341F51F0B300A3773F /* Multiplayer */ = {
 			isa = PBXGroup;
 			children = (
+				9EF5261B1F535DA5004275BC /* packets.dat */,
 				9EDF9FF51F53370D00242B7D /* Multiplayer.entitlements */,
 				9E1A56351F51F0B300A3773F /* AppDelegate.swift */,
 				9E1A56371F51F0B300A3773F /* art.scnassets */,
@@ -264,6 +267,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9ED312641F535DEA0078AB0E /* packets.dat in Resources */,
 				9E1A56381F51F0B300A3773F /* art.scnassets in Resources */,
 				9E1A56421F51F0B300A3773F /* LaunchScreen.storyboard in Resources */,
 				9E1A563F1F51F0B300A3773F /* Assets.xcassets in Resources */,

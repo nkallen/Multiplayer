@@ -4,6 +4,9 @@ import SceneKit
 import GameKit
 
 class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelegate, SCNSceneRendererDelegate {
+
+    let jitterBuffer = JitterBuffer(capacity: 1024)
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -14,6 +17,13 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
         scnView.addGestureRecognizer(tapGesture)
 
         setupGame()
+
+        let url = documentDirectory.appendingPathComponent("packets.dat")
+        let data = try! Data(contentsOf: url)
+        let dataWrapper = DataWrapper(data)
+        while let packet = Packet(dataWrapper: dataWrapper) {
+            jitterBuffer.push(packet)
+        }
     }
 
     // MARK: - GameKit
@@ -65,25 +75,37 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
         print("player", player, "changed state to", state)
     }
 
+    func frameCount(updatedAtTime time: TimeInterval) -> Int {
+        let deltaTime: TimeInterval = time - self.firstUpdateTime!
+        return Int(deltaTime * 60)
+    }
+
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
+        if firstUpdateTime == nil {
+            self.firstUpdateTime = time
+        }
+        let scnView = self.view as! SCNView
+        if let packet = jitterBuffer[frameCount(updatedAtTime: time)] {
+            scnView.scene!.apply(packet: packet)
+        }
+    }
+
+    func renderer(_ renderer: SCNSceneRenderer, didRenderScene scene: SCNScene, atTime time: TimeInterval) {
+        print("rendering")
     }
 
     var data = NSMutableData()
+    let documentDirectory = FileManager.default.urls(for: .documentDirectory, in:.userDomainMask).first!
 
     func renderer(_ renderer: SCNSceneRenderer, didSimulatePhysicsAtTime time: TimeInterval) {
-//        if let firstUpdateTime = firstUpdateTime {
-//            if firstUpdateTime == 0 {
-//                self.firstUpdateTime = time
-//            }
-//            let deltaTime: TimeInterval = time - firstUpdateTime
-//            print(Int(deltaTime * 60))
-//
-        let scnView = self.view as! SCNView
-        let packet = scnView.scene!.packet
-        data.append(packet.data)
-//            print(host, GKLocalPlayer.localPlayer())
+//        let scnView = self.view as! SCNView
+//        let packet = scnView.scene!.packet(sequence: frameCount)
+//        data.append(packet.data)
+//        if frameCount == 1000 {
+//            print("writing....")
+//            //            try! data.write(to: documentDirectory.appendingPathComponent("packets.dat"))
 //        }
-        print(data)
+
     }
 
     @objc

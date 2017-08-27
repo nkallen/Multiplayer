@@ -2,6 +2,7 @@ import Foundation
 import SceneKit
 
 fileprivate var node2registered = [SCNNode:Registered]()
+fileprivate var id2node = [Int16:SCNNode]()
 fileprivate var counter: Int16 = 0
 fileprivate var registry = Set<Registered>()
 fileprivate let priorityAccumulator = PriorityAccumulator()
@@ -48,16 +49,40 @@ extension SCNNode: Registerable {
         assert(counter < .max)
         let registered = Registered(id: counter, value: self)
         node2registered[self] = registered
+        id2node[counter] = self
 
         registry.insert(registered)
         return registered
     }
+
+    func update(to state: NodeState) {
+        simdPosition = state.position
+        simdEulerAngles = state.eulerAngles
+    }
 }
 
 extension SCNScene {
-    var packet: Packet {
+    func packet(sequence: Int) -> Packet {
+        let sequence = Int16(sequence % Int(Int16.max))
         priorityAccumulator.update()
         return Packet(sequence: sequence, updates: priorityAccumulator.top(Packet.maxStateUpdatesPerPacket).map { $0.state })
+    }
+
+    func apply(packet: Packet) {
+        for update in packet.updates {
+            if let node = id2node[update.id] {
+                node.update(to: update)
+            } else {
+                let box = SCNBox(width: 1, height: 1, length: 1, chamferRadius: 0)
+                box.firstMaterial = SCNMaterial.material(withDiffuse: UIColor.blue.withAlphaComponent(0.5))
+                let node = SCNNode(geometry: box)
+                node.simdPosition = float3(0, 10, 0)
+                node.physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
+                node.register()
+                rootNode.addChildNode(node)
+                node.update(to: update)
+            }
+        }
     }
 }
 
@@ -218,19 +243,20 @@ class JitterBuffer {
         let sequence = sequence - minDelay
         guard sequence >= 0 else { return nil }
 
-        return buffer[sequence]
+        return buffer[sequence % buffer.count]
     }
 
 }
 
 protocol DataConvertible {
-    init?(data: Data)
+    init?(dataWrapper: DataWrapper)
     var data: Data { get }
 }
 
 extension DataConvertible {
-    init?(data: Data) {
-        guard data.count == MemoryLayout<Self>.size else { return nil }
+    init?(dataWrapper: DataWrapper) {
+        guard dataWrapper.count >= MemoryLayout<Self>.size else { return nil }
+        let data = dataWrapper.read(MemoryLayout<Self>.size)
         self = data.withUnsafeBytes { $0.pointee }
     }
 
@@ -253,6 +279,11 @@ extension Array: DataConvertible {
         return Data(buffer: UnsafeBufferPointer(start: &values, count: count))
     }
 
+    init?(dataWrapper: DataWrapper, count: Int) {
+        guard dataWrapper.count >= MemoryLayout<Iterator.Element>.stride * count else { return nil }
+        self.init(data: dataWrapper.read(MemoryLayout<Iterator.Element>.stride * count))
+    }
+
     init?(data: Data) {
         self = data.withUnsafeBytes {
             [Iterator.Element](UnsafeBufferPointer(start: $0, count: data.count/MemoryLayout<Iterator.Element>.stride))
@@ -262,29 +293,14 @@ extension Array: DataConvertible {
 extension Packet: DataConvertible {
     static let minimumSizeInBytes = 4
 
-    init?(data: Data) {
-        guard data.count >= Packet.minimumSizeInBytes else { return nil }
-        var cursor = 0
+    init?(dataWrapper: DataWrapper) {
+        guard dataWrapper.count >= Packet.minimumSizeInBytes else { return nil }
 
-        var size = MemoryLayout<Int16>.size
-        guard let sequence = Int16(data: data.subdata(in: cursor..<size)) else { return nil}
-        cursor += size
-
-        size = MemoryLayout<UInt8>.size
-        guard let compactCount = UInt8(data: data.subdata(in: cursor..<cursor+size)) else { return nil }
-        cursor += size
-
-        size = Int(compactCount) * MemoryLayout<CompactNodeState>.size
-        guard let compactUpdates = [CompactNodeState](data: data.subdata(in: cursor..<cursor+size)) else { return nil }
-        cursor += size
-
-        size = MemoryLayout<UInt8>.size
-        guard let fullCount = UInt8(data: data.subdata(in: cursor..<cursor+size)) else { return nil }
-        cursor += size
-
-        size = Int(fullCount) * MemoryLayout<FullNodeState>.size
-        guard let fullUpdates = [FullNodeState](data: data.subdata(in: cursor..<cursor+size)) else { return nil }
-        cursor += size
+        guard let sequence = Int16(dataWrapper: dataWrapper) else { return nil}
+        guard let compactCount = UInt8(dataWrapper: dataWrapper) else { return nil }
+        guard let compactUpdates = [CompactNodeState](dataWrapper: dataWrapper, count: Int(compactCount)) else { return nil }
+        guard let fullCount = UInt8(dataWrapper: dataWrapper) else { return nil }
+        guard let fullUpdates = [FullNodeState](dataWrapper: dataWrapper, count: Int(fullCount)) else { return nil }
 
         self.sequence = sequence
         self.updatesCompact = compactUpdates
@@ -305,29 +321,14 @@ extension Packet: DataConvertible {
 extension FullNodeState: DataConvertible {
     static let sizeInBytes = 66
 
-    init?(data: Data) {
-        guard data.count == FullNodeState.sizeInBytes else { return nil }
-        var cursor = 0
+    init?(dataWrapper: DataWrapper) {
+        guard dataWrapper.count == FullNodeState.sizeInBytes else { return nil }
 
-        var size = MemoryLayout<Int16>.size
-        guard let id = Int16(data: data.subdata(in: cursor..<size)) else { return nil}
-        cursor += size
-
-        size = MemoryLayout<float3>.size
-        guard let position = float3(data: data.subdata(in: cursor..<cursor+size)) else { return nil }
-        cursor += size
-
-        size = MemoryLayout<float3>.size
-        guard let eulerAngles = float3(data: data.subdata(in: cursor..<cursor+size)) else { return nil }
-        cursor += size
-
-        size = MemoryLayout<float3>.size
-        guard let linearVelocity = float3(data: data.subdata(in: cursor..<cursor+size)) else { return nil }
-        cursor += size
-
-        size = MemoryLayout<float4>.size
-        guard let angularVelocity = float4(data: data.subdata(in: cursor..<cursor+size)) else { return nil }
-        cursor += size
+        guard let id = Int16(dataWrapper: dataWrapper) else { return nil }
+        guard let position = float3(dataWrapper: dataWrapper) else { return nil }
+        guard let eulerAngles = float3(dataWrapper: dataWrapper) else { return nil }
+        guard let linearVelocity = float3(dataWrapper: dataWrapper) else { return nil }
+        guard let angularVelocity = float4(dataWrapper: dataWrapper) else { return nil }
 
         self.id = id
         self.position = position
@@ -350,21 +351,12 @@ extension FullNodeState: DataConvertible {
 extension CompactNodeState: DataConvertible {
     static let sizeInBytes = 34
 
-    init?(data: Data) {
-        guard data.count == CompactNodeState.sizeInBytes else { return nil }
-        var cursor = 0
+    init?(dataWrapper: DataWrapper) {
+        guard dataWrapper.count >= CompactNodeState.sizeInBytes else { return nil }
 
-        var size = MemoryLayout<Int16>.size
-        guard let id = Int16(data: data.subdata(in: cursor..<size)) else { return nil}
-        cursor += size
-
-        size = MemoryLayout<float3>.size
-        guard let position = float3(data: data.subdata(in: cursor..<cursor+size)) else { return nil }
-        cursor += size
-
-        size = MemoryLayout<float3>.size
-        guard let eulerAngles = float3(data: data.subdata(in: cursor..<cursor+size)) else { return nil }
-        cursor += size
+        guard let id = Int16(dataWrapper: dataWrapper) else { return nil }
+        guard let position = float3(dataWrapper: dataWrapper) else { return nil }
+        guard let eulerAngles = float3(dataWrapper: dataWrapper) else { return nil }
 
         self.id = id
         self.position = position
@@ -377,5 +369,24 @@ extension CompactNodeState: DataConvertible {
         mutableData.append(position.data)
         mutableData.append(eulerAngles.data)
         return mutableData as Data
+    }
+}
+
+class DataWrapper {
+    let underlying: Data
+    var cursor = 0
+
+    init(_ underlying: Data) {
+        self.underlying = underlying
+    }
+
+    func read(_ count: Int) -> Data {
+        let result = underlying.subdata(in: cursor..<cursor+count)
+        cursor += count
+        return result
+    }
+
+    var count: Int {
+        return underlying.count - cursor
     }
 }
