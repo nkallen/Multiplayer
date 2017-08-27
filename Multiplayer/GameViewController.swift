@@ -68,7 +68,7 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
     }
 
-    var packets = [Packet]()
+    var data = NSMutableData()
 
     func renderer(_ renderer: SCNSceneRenderer, didSimulatePhysicsAtTime time: TimeInterval) {
 //        if let firstUpdateTime = firstUpdateTime {
@@ -80,10 +80,10 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
 //
         let scnView = self.view as! SCNView
         let packet = scnView.scene!.packet
-        packets.append(packet)
-        print(packet.updates.count, packet.data)
+        data.append(packet.data)
 //            print(host, GKLocalPlayer.localPlayer())
 //        }
+        print(data)
     }
 
     @objc

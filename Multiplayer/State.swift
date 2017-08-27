@@ -8,6 +8,10 @@ fileprivate let priorityAccumulator = PriorityAccumulator()
 fileprivate var sequence: Int16 = 0
 
 struct Registered: Hashable, Equatable {
+    static var registered: Set<Registered> {
+        return registry
+    }
+
     let id: Int16
     let value: SCNNode
 
@@ -18,14 +22,16 @@ struct Registered: Hashable, Equatable {
     static func ==(lhs: Registered, rhs: Registered) -> Bool {
         return lhs.id == rhs.id
     }
-}
-
-extension Registered {
-    static var registered: Set<Registered> {
-        return registry
-    }
 
     var state: NodeState {
+        if let physicsBody = value.physicsBody {
+            if !physicsBody.isResting &&
+                !(float3(physicsBody.velocity) == float3(0,0,0) &&
+                        float4(physicsBody.angularVelocity) == float4(0,0,0,0)) {
+                return FullNodeState(id: id, position: value.presentation.simdPosition, eulerAngles: value.presentation.simdEulerAngles, linearVelocity: float3(physicsBody.velocity), angularVelocity: float4(physicsBody.angularVelocity))
+            }
+        }
+
         return CompactNodeState(id: id, position: value.presentation.simdPosition, eulerAngles: value.presentation.simdEulerAngles)
     }
 }
@@ -60,7 +66,7 @@ protocol NodeState: DataConvertible {
     var position: float3 { get }
     var eulerAngles: float3 { get }
     var linearVelocity: float3 { get }
-    var angularVelocity: float3 { get }
+    var angularVelocity: float4 { get }
 }
 
 extension NodeState {
@@ -91,7 +97,7 @@ struct CompactNodeState: NodeState, Equatable {
     let position: float3
     let eulerAngles: float3
     var linearVelocity: float3 { return float3(0,0,0) }
-    var angularVelocity: float3 { return float3(0,0,0) }
+    var angularVelocity: float4 { return float4(0,0,0,0) }
 
     static func ==(lhs: CompactNodeState, rhs: CompactNodeState) -> Bool {
         return lhs.id == rhs.id &&
@@ -107,7 +113,7 @@ struct FullNodeState: NodeState, Equatable {
     let position: float3
     let eulerAngles: float3
     let linearVelocity: float3
-    let angularVelocity: float3
+    let angularVelocity: float4
 
     static func ==(lhs: FullNodeState, rhs: FullNodeState) -> Bool {
         return lhs.id == rhs.id &&
@@ -241,8 +247,6 @@ extension Float: DataConvertible {}
 extension Double: DataConvertible {}
 extension float3: DataConvertible {}
 extension float4: DataConvertible {}
-extension FullNodeState: DataConvertible {}
-extension CompactNodeState: DataConvertible {}
 extension Array: DataConvertible {
     var data: Data {
         var values = self
@@ -294,6 +298,84 @@ extension Packet: DataConvertible {
         mutableData.append(updatesCompact.data)
         mutableData.append(UInt8(updatesFull.count).data)
         mutableData.append(updatesFull.data)
+        return mutableData as Data
+    }
+}
+
+extension FullNodeState: DataConvertible {
+    static let sizeInBytes = 66
+
+    init?(data: Data) {
+        guard data.count == FullNodeState.sizeInBytes else { return nil }
+        var cursor = 0
+
+        var size = MemoryLayout<Int16>.size
+        guard let id = Int16(data: data.subdata(in: cursor..<size)) else { return nil}
+        cursor += size
+
+        size = MemoryLayout<float3>.size
+        guard let position = float3(data: data.subdata(in: cursor..<cursor+size)) else { return nil }
+        cursor += size
+
+        size = MemoryLayout<float3>.size
+        guard let eulerAngles = float3(data: data.subdata(in: cursor..<cursor+size)) else { return nil }
+        cursor += size
+
+        size = MemoryLayout<float3>.size
+        guard let linearVelocity = float3(data: data.subdata(in: cursor..<cursor+size)) else { return nil }
+        cursor += size
+
+        size = MemoryLayout<float4>.size
+        guard let angularVelocity = float4(data: data.subdata(in: cursor..<cursor+size)) else { return nil }
+        cursor += size
+
+        self.id = id
+        self.position = position
+        self.eulerAngles = eulerAngles
+        self.linearVelocity = linearVelocity
+        self.angularVelocity = angularVelocity
+    }
+
+    var data: Data {
+        let mutableData = NSMutableData()
+        mutableData.append(id.data)
+        mutableData.append(position.data)
+        mutableData.append(eulerAngles.data)
+        mutableData.append(linearVelocity.data)
+        mutableData.append(angularVelocity.data)
+        return mutableData as Data
+    }
+}
+
+extension CompactNodeState: DataConvertible {
+    static let sizeInBytes = 34
+
+    init?(data: Data) {
+        guard data.count == CompactNodeState.sizeInBytes else { return nil }
+        var cursor = 0
+
+        var size = MemoryLayout<Int16>.size
+        guard let id = Int16(data: data.subdata(in: cursor..<size)) else { return nil}
+        cursor += size
+
+        size = MemoryLayout<float3>.size
+        guard let position = float3(data: data.subdata(in: cursor..<cursor+size)) else { return nil }
+        cursor += size
+
+        size = MemoryLayout<float3>.size
+        guard let eulerAngles = float3(data: data.subdata(in: cursor..<cursor+size)) else { return nil }
+        cursor += size
+
+        self.id = id
+        self.position = position
+        self.eulerAngles = eulerAngles
+    }
+    
+    var data: Data {
+        let mutableData = NSMutableData()
+        mutableData.append(id.data)
+        mutableData.append(position.data)
+        mutableData.append(eulerAngles.data)
         return mutableData as Data
     }
 }
