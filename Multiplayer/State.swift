@@ -58,6 +58,10 @@ extension SCNNode: Registerable {
     func update(to state: NodeState) {
         simdPosition = state.position
         simdEulerAngles = state.eulerAngles
+        if let physicsBody = physicsBody {
+            physicsBody.velocity = SCNVector3(state.linearVelocity)
+            physicsBody.angularVelocity = SCNVector4(state.angularVelocity)
+        }
     }
 }
 
@@ -224,7 +228,7 @@ class JitterBuffer {
     var buffer: [Packet?]
     let minDelay: Int
 
-    var lastSeen: Int16 = -1
+    var lastReceived: Int16 = -1
     var count = 0
 
     init(capacity: Int, minDelay: Int = 5) {
@@ -236,12 +240,13 @@ class JitterBuffer {
 
     func push(_ packet: Packet) {
         buffer[Int(packet.sequence) % buffer.count] = packet
-        lastSeen = max(packet.sequence, lastSeen)
+        lastReceived = max(packet.sequence, lastReceived)
     }
 
     subscript(sequence: Int) -> Packet? {
         let sequence = sequence - minDelay
         guard sequence >= 0 else { return nil }
+        guard sequence <= lastReceived else { return nil }
 
         return buffer[sequence % buffer.count]
     }

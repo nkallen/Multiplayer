@@ -21,8 +21,12 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
         let url = documentDirectory.appendingPathComponent("packets.dat")
         let data = try! Data(contentsOf: url)
         let dataWrapper = DataWrapper(data)
+        var i = 0
         while let packet = Packet(dataWrapper: dataWrapper) {
-            jitterBuffer.push(packet)
+            i += 1
+            if i % 30 == 0 {
+                jitterBuffer.push(packet)
+            }
         }
     }
 
@@ -91,7 +95,6 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
     }
 
     func renderer(_ renderer: SCNSceneRenderer, didRenderScene scene: SCNScene, atTime time: TimeInterval) {
-        print("rendering")
     }
 
     var data = NSMutableData()
