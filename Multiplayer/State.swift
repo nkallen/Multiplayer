@@ -61,6 +61,7 @@ extension SCNNode: Registerable {
         if let physicsBody = physicsBody {
             physicsBody.velocity = SCNVector3(state.linearVelocity)
             physicsBody.angularVelocity = SCNVector4(state.angularVelocity)
+            physicsBody.resetTransform()
         }
     }
 }
