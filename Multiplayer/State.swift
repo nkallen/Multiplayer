@@ -302,13 +302,12 @@ extension Packet: DataConvertible {
     static let minimumSizeInBytes = 4
 
     init?(dataWrapper: DataWrapper) {
-        guard dataWrapper.count >= Packet.minimumSizeInBytes else { return nil }
-
-        guard let sequence = Int16(dataWrapper: dataWrapper) else { return nil}
-        guard let compactCount = UInt8(dataWrapper: dataWrapper) else { return nil }
-        guard let compactUpdates = [CompactNodeState](dataWrapper: dataWrapper, count: Int(compactCount)) else { return nil }
-        guard let fullCount = UInt8(dataWrapper: dataWrapper) else { return nil }
-        guard let fullUpdates = [FullNodeState](dataWrapper: dataWrapper, count: Int(fullCount)) else { return nil }
+        guard dataWrapper.count >= Packet.minimumSizeInBytes,
+            let sequence = Int16(dataWrapper: dataWrapper),
+            let compactCount = UInt8(dataWrapper: dataWrapper),
+            let compactUpdates = [CompactNodeState](dataWrapper: dataWrapper, count: Int(compactCount)),
+            let fullCount = UInt8(dataWrapper: dataWrapper),
+            let fullUpdates = [FullNodeState](dataWrapper: dataWrapper, count: Int(fullCount)) else { return nil }
 
         self.sequence = sequence
         self.updatesCompact = compactUpdates
@@ -330,13 +329,12 @@ extension FullNodeState: DataConvertible {
     static let sizeInBytes = 66
 
     init?(dataWrapper: DataWrapper) {
-        guard dataWrapper.count == FullNodeState.sizeInBytes else { return nil }
-
-        guard let id = Int16(dataWrapper: dataWrapper) else { return nil }
-        guard let position = float3(dataWrapper: dataWrapper) else { return nil }
-        guard let eulerAngles = float3(dataWrapper: dataWrapper) else { return nil }
-        guard let linearVelocity = float3(dataWrapper: dataWrapper) else { return nil }
-        guard let angularVelocity = float4(dataWrapper: dataWrapper) else { return nil }
+        guard dataWrapper.count == FullNodeState.sizeInBytes,
+            let id = Int16(dataWrapper: dataWrapper),
+            let position = float3(dataWrapper: dataWrapper),
+            let eulerAngles = float3(dataWrapper: dataWrapper),
+            let linearVelocity = float3(dataWrapper: dataWrapper),
+            let angularVelocity = float4(dataWrapper: dataWrapper) else { return nil }
 
         self.id = id
         self.position = position
@@ -360,11 +358,10 @@ extension CompactNodeState: DataConvertible {
     static let sizeInBytes = 34
 
     init?(dataWrapper: DataWrapper) {
-        guard dataWrapper.count >= CompactNodeState.sizeInBytes else { return nil }
-
-        guard let id = Int16(dataWrapper: dataWrapper) else { return nil }
-        guard let position = float3(dataWrapper: dataWrapper) else { return nil }
-        guard let eulerAngles = float3(dataWrapper: dataWrapper) else { return nil }
+        guard dataWrapper.count >= CompactNodeState.sizeInBytes,
+            let id = Int16(dataWrapper: dataWrapper),
+            let position = float3(dataWrapper: dataWrapper),
+            let eulerAngles = float3(dataWrapper: dataWrapper) else { return nil }
 
         self.id = id
         self.position = position
