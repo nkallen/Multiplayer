@@ -1,37 +1,49 @@
 import Foundation
 import SceneKit
 
-fileprivate var node2id = [SCNNode:Int16]()
+fileprivate var node2registered = [SCNNode:Registered]()
 fileprivate var counter: Int16 = 0
-fileprivate var registry = Set<SCNNode>()
+fileprivate var registry = Set<Registered>()
 
-protocol Registered {
-    var id: Int16? { get }
-    func register()
+struct Registered: Hashable, Equatable {
+    let id: Int16
+    let value: SCNNode
+
+    var hashValue: Int {
+        return Int(id)
+    }
+
+    static func ==(lhs: Registered, rhs: Registered) -> Bool {
+        return lhs.id == rhs.id
+    }
 }
 
-extension SCNNode: Registered {
-    static var registered: Set<SCNNode> {
+extension Registered {
+    static var registered: Set<Registered> {
         return registry
     }
+}
 
-    var id: Int16? {
-        return node2id[self]
-    }
+protocol Registerable {
+    func register() -> Registered
+}
 
-    func register() {
-        guard !registry.contains(self) else { return }
+extension SCNNode: Registerable {
+    func register() -> Registered {
+        if let registered = node2registered[self] { return registered }
 
         counter += 1
         assert(counter < .max)
-        node2id[self] = counter
+        let registered = Registered(id: counter, value: self)
+        node2registered[self] = registered
 
-        registry.insert(self)
+        registry.insert(registered)
+        return registered
     }
 
     var state: NodeState? {
-        if let id = id {
-            return CompactNodeState(id: id, position: simdPosition, eulerAngles: simdEulerAngles)
+        if let registered = node2registered[self] {
+            return CompactNodeState(id: registered.id, position: simdPosition, eulerAngles: simdEulerAngles)
         }
         return nil
     }
@@ -127,11 +139,9 @@ class PriorityAccumulator {
     var priorities = [Float](repeating: 0, count: Int(Int16.max))
 
     func update() {
-        for item in registry {
-            if let registered = item as? Registered,
-                let id = registered.id,
-                let prioritized = item as? HasPriority {
-                let original = priorities[Int(id)]
+        for registered in registry {
+            if let prioritized = registered.value as? HasPriority {
+                let id = registered.id
                 priorities[Int(id)] = priorities[Int(id)] + prioritized.intrinsicPriority
             }
         }
@@ -139,17 +149,15 @@ class PriorityAccumulator {
 
     func top(_ count: Int) -> [SCNNode] {
         let sorted = registry.sorted { (item1, item2) -> Bool in
-            if let id1 = item1.id, let id2 = item2.id {
-                return priorities[Int(id1)] > priorities[Int(id2)]
-            }
-            return false
+            let id1 = item1.id
+            let id2 = item2.id
+            return priorities[Int(id1)] > priorities[Int(id2)]
         }
         var result = [SCNNode]()
-        for node in sorted[0..<count] {
-            if let id = node.id {
-                priorities[Int(id)] = 0
-                result.append(node)
-            }
+        for registered in sorted[0..<count] {
+            let id = registered.id
+            priorities[Int(id)] = 0
+            result.append(registered.value)
         }
         return result
     }
