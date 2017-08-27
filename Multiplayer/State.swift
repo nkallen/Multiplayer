@@ -55,7 +55,7 @@ extension SCNScene {
     }
 }
 
-protocol NodeState {
+protocol NodeState: DataConvertible {
     var id: Int16 { get }
     var position: float3 { get }
     var eulerAngles: float3 { get }
@@ -123,7 +123,29 @@ struct Packet: Equatable, Comparable {
     static let maxStateUpdatesPerPacket = 64
 
     let sequence: Int16
-    let updates: [NodeState]
+    let updatesCompact: [CompactNodeState]
+    let updatesFull: [FullNodeState]
+
+    init(sequence: Int16, updates: [NodeState]) {
+        var updatesCompact = [CompactNodeState]()
+        var updatesFull = [FullNodeState]()
+        for update in updates {
+            switch update {
+            case let update as CompactNodeState:
+                updatesCompact.append(update)
+            case let update as FullNodeState:
+                updatesFull.append(update)
+            default: ()
+            }
+        }
+        self.sequence = sequence
+        self.updatesCompact = updatesCompact
+        self.updatesFull = updatesFull
+    }
+
+    var updates: [NodeState] {
+        return (updatesCompact as [NodeState]) + (updatesFull as [NodeState])
+    }
 
     static func ==(lhs: Packet, rhs: Packet) -> Bool {
         return lhs.sequence == rhs.sequence &&
@@ -212,6 +234,8 @@ extension DataConvertible {
     }
 }
 
+extension UInt8: DataConvertible {}
+extension Int16: DataConvertible {}
 extension Int: DataConvertible {}
 extension Float: DataConvertible {}
 extension Double: DataConvertible {}
@@ -219,4 +243,57 @@ extension float3: DataConvertible {}
 extension float4: DataConvertible {}
 extension FullNodeState: DataConvertible {}
 extension CompactNodeState: DataConvertible {}
-extension Packet: DataConvertible {}
+extension Array: DataConvertible {
+    var data: Data {
+        var values = self
+        return Data(buffer: UnsafeBufferPointer(start: &values, count: count))
+    }
+
+    init?(data: Data) {
+        self = data.withUnsafeBytes {
+            [Iterator.Element](UnsafeBufferPointer(start: $0, count: data.count/MemoryLayout<Iterator.Element>.stride))
+        }
+    }
+}
+extension Packet: DataConvertible {
+    static let minimumSizeInBytes = 4
+
+    init?(data: Data) {
+        guard data.count >= Packet.minimumSizeInBytes else { return nil }
+        var cursor = 0
+
+        var size = MemoryLayout<Int16>.size
+        guard let sequence = Int16(data: data.subdata(in: cursor..<size)) else { return nil}
+        cursor += size
+
+        size = MemoryLayout<UInt8>.size
+        guard let compactCount = UInt8(data: data.subdata(in: cursor..<cursor+size)) else { return nil }
+        cursor += size
+
+        size = Int(compactCount) * MemoryLayout<CompactNodeState>.size
+        guard let compactUpdates = [CompactNodeState](data: data.subdata(in: cursor..<cursor+size)) else { return nil }
+        cursor += size
+
+        size = MemoryLayout<UInt8>.size
+        guard let fullCount = UInt8(data: data.subdata(in: cursor..<cursor+size)) else { return nil }
+        cursor += size
+
+        size = Int(fullCount) * MemoryLayout<FullNodeState>.size
+        guard let fullUpdates = [FullNodeState](data: data.subdata(in: cursor..<cursor+size)) else { return nil }
+        cursor += size
+
+        self.sequence = sequence
+        self.updatesCompact = compactUpdates
+        self.updatesFull = fullUpdates
+    }
+
+    var data: Data {
+        let mutableData = NSMutableData()
+        mutableData.append(sequence.data)
+        mutableData.append(UInt8(updatesCompact.count).data)
+        mutableData.append(updatesCompact.data)
+        mutableData.append(UInt8(updatesFull.count).data)
+        mutableData.append(updatesFull.data)
+        return mutableData as Data
+    }
+}

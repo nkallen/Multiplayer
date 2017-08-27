@@ -38,36 +38,52 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
         }
     }
 
+    var firstUpdateTime: TimeInterval?
     func startMatch() {
         let localPlayer = GKLocalPlayer.localPlayer()
-        print(1, localPlayer.isAuthenticated)
         let matchRequest = GKMatchRequest()
         matchRequest.minPlayers = 2
         GKMatchmaker.shared().findMatch(for: matchRequest) { (match, error) in
             if let match = match {
+                print("found match", match)
                 match.delegate = self
-                match.chooseBestHostingPlayer { best in
-                    if let player = best {
-                        self.host = player
-                    } else {
-                        self.host = match.players.first
-                    }
-                }
+
             }
         }
     }
 
+    func match(_ match: GKMatch, didFailWithError error: Error?) {
+        print("failure with error", error)
+    }
+
     func match(_ match: GKMatch, didReceive data: Data, fromRemotePlayer player: GKPlayer) {
+        print("did receive data")
     }
 
     func match(_ match: GKMatch, player: GKPlayer, didChange state: GKPlayerConnectionState) {
+        print(match.players, match.expectedPlayerCount)
         print("player", player, "changed state to", state)
     }
 
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
+    }
+
+    var packets = [Packet]()
+
+    func renderer(_ renderer: SCNSceneRenderer, didSimulatePhysicsAtTime time: TimeInterval) {
+//        if let firstUpdateTime = firstUpdateTime {
+//            if firstUpdateTime == 0 {
+//                self.firstUpdateTime = time
+//            }
+//            let deltaTime: TimeInterval = time - firstUpdateTime
+//            print(Int(deltaTime * 60))
+//
         let scnView = self.view as! SCNView
         let packet = scnView.scene!.packet
-        print(time)
+        packets.append(packet)
+        print(packet.updates.count, packet.data)
+//            print(host, GKLocalPlayer.localPlayer())
+//        }
     }
 
     @objc

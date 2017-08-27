@@ -18,6 +18,7 @@
 		9E1A56661F51F10100A3773F /* State.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1A56651F51F10100A3773F /* State.swift */; };
 		9E1A56681F51F9F200A3773F /* StateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1A56671F51F9F200A3773F /* StateTests.swift */; };
 		9EAAF2091F520DFA007F210A /* GameKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9EAAF2081F520DFA007F210A /* GameKit.framework */; };
+		9EDF9FF41F53370D00242B7D /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9EDF9FF31F53370D00242B7D /* NetworkExtension.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -55,6 +56,8 @@
 		9E1A56651F51F10100A3773F /* State.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = State.swift; sourceTree = "<group>"; };
 		9E1A56671F51F9F200A3773F /* StateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateTests.swift; sourceTree = "<group>"; };
 		9EAAF2081F520DFA007F210A /* GameKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GameKit.framework; path = System/Library/Frameworks/GameKit.framework; sourceTree = SDKROOT; };
+		9EDF9FF31F53370D00242B7D /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
+		9EDF9FF51F53370D00242B7D /* Multiplayer.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Multiplayer.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +66,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9EAAF2091F520DFA007F210A /* GameKit.framework in Frameworks */,
+				9EDF9FF41F53370D00242B7D /* NetworkExtension.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -107,6 +111,7 @@
 		9E1A56341F51F0B300A3773F /* Multiplayer */ = {
 			isa = PBXGroup;
 			children = (
+				9EDF9FF51F53370D00242B7D /* Multiplayer.entitlements */,
 				9E1A56351F51F0B300A3773F /* AppDelegate.swift */,
 				9E1A56371F51F0B300A3773F /* art.scnassets */,
 				9E1A56391F51F0B300A3773F /* GameViewController.swift */,
@@ -141,6 +146,7 @@
 		9E1A56691F520A4700A3773F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				9EDF9FF31F53370D00242B7D /* NetworkExtension.framework */,
 				9EAAF2081F520DFA007F210A /* GameKit.framework */,
 			);
 			name = Frameworks;
@@ -216,6 +222,9 @@
 						CreatedOnToolsVersion = 9.0;
 						SystemCapabilities = {
 							com.apple.GameCenter = {
+								enabled = 1;
+							};
+							com.apple.NetworkExtensions.iOS = {
 								enabled = 1;
 							};
 						};
@@ -452,6 +461,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Multiplayer/Multiplayer.entitlements;
 				DEVELOPMENT_TEAM = G3GUW83N5R;
 				INFOPLIST_FILE = Multiplayer/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -466,6 +476,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Multiplayer/Multiplayer.entitlements;
 				DEVELOPMENT_TEAM = G3GUW83N5R;
 				INFOPLIST_FILE = Multiplayer/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
