@@ -4,6 +4,8 @@ import SceneKit
 fileprivate var node2registered = [SCNNode:Registered]()
 fileprivate var counter: Int16 = 0
 fileprivate var registry = Set<Registered>()
+fileprivate let priorityAccumulator = PriorityAccumulator()
+fileprivate var sequence: Int16 = 0
 
 struct Registered: Hashable, Equatable {
     let id: Int16
@@ -21,6 +23,10 @@ struct Registered: Hashable, Equatable {
 extension Registered {
     static var registered: Set<Registered> {
         return registry
+    }
+
+    var state: NodeState {
+        return CompactNodeState(id: id, position: value.presentation.simdPosition, eulerAngles: value.presentation.simdEulerAngles)
     }
 }
 
@@ -40,18 +46,12 @@ extension SCNNode: Registerable {
         registry.insert(registered)
         return registered
     }
-
-    var state: NodeState? {
-        if let registered = node2registered[self] {
-            return CompactNodeState(id: registered.id, position: simdPosition, eulerAngles: simdEulerAngles)
-        }
-        return nil
-    }
 }
 
 extension SCNScene {
     var packet: Packet {
-        return Packet(sequence: 0, updates: [])
+        priorityAccumulator.update()
+        return Packet(sequence: sequence, updates: priorityAccumulator.top(Packet.maxStateUpdatesPerPacket).map { $0.state })
     }
 }
 
@@ -147,17 +147,17 @@ class PriorityAccumulator {
         }
     }
 
-    func top(_ count: Int) -> [SCNNode] {
+    func top(_ count: Int) -> [Registered] {
         let sorted = registry.sorted { (item1, item2) -> Bool in
             let id1 = item1.id
             let id2 = item2.id
             return priorities[Int(id1)] > priorities[Int(id2)]
         }
-        var result = [SCNNode]()
-        for registered in sorted[0..<count] {
+        var result = [Registered]()
+        for registered in sorted[0..<min(count, sorted.count)] {
             let id = registered.id
             priorities[Int(id)] = 0
-            result.append(registered.value)
+            result.append(registered)
         }
         return result
     }

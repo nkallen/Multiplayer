@@ -65,6 +65,9 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
     }
 
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
+        let scnView = self.view as! SCNView
+        let packet = scnView.scene!.packet
+        print(time)
     }
 
     @objc
