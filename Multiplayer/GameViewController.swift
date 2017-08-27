@@ -64,16 +64,22 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
         print("player", player, "changed state to", state)
     }
 
+    func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
+    }
 
     @objc
     func handleTap(_ gestureRecognize: UIGestureRecognizer) {
-        let scnView = self.view as! SCNView
+        createBox()
+    }
 
+    func createBox() {
+        let scnView = self.view as! SCNView
         let box = SCNBox(width: 1, height: 1, length: 1, chamferRadius: 0)
         box.firstMaterial = SCNMaterial.material(withDiffuse: UIColor.blue.withAlphaComponent(0.5))
         let node = SCNNode(geometry: box)
         node.simdPosition = float3(0, 10, 0)
         node.physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
+        node.register()
         scnView.scene?.rootNode.addChildNode(node)
     }
 

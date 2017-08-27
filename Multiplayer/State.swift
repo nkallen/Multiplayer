@@ -1,10 +1,52 @@
 import Foundation
 import SceneKit
 
+fileprivate var node2id = [SCNNode:Int16]()
+fileprivate var counter: Int16 = 0
+fileprivate var registry = Set<SCNNode>()
+
+protocol Registered {
+    var id: Int16? { get }
+    func register()
+}
+
+extension SCNNode: Registered {
+    static var registered: Set<SCNNode> {
+        return registry
+    }
+
+    var id: Int16? {
+        return node2id[self]
+    }
+
+    func register() {
+        guard !registry.contains(self) else { return }
+
+        counter += 1
+        assert(counter < .max)
+        node2id[self] = counter
+
+        registry.insert(self)
+    }
+
+    var state: NodeState? {
+        if let id = id {
+            return CompactNodeState(id: id, position: simdPosition, eulerAngles: simdEulerAngles)
+        }
+        return nil
+    }
+}
+
+extension SCNScene {
+    var packet: Packet {
+        return Packet(sequence: 0, updates: [])
+    }
+}
+
 protocol NodeState {
-    var id: Int { get }
+    var id: Int16 { get }
     var position: float3 { get }
-    var orientation: float4 { get }
+    var eulerAngles: float3 { get }
     var linearVelocity: float3 { get }
     var angularVelocity: float3 { get }
 }
@@ -14,7 +56,7 @@ extension NodeState {
         let lhs = self
         return lhs.id == rhs.id &&
             lhs.position == rhs.position &&
-            lhs.orientation == rhs.orientation &&
+            lhs.eulerAngles == rhs.eulerAngles &&
             lhs.linearVelocity == rhs.linearVelocity &&
             lhs.angularVelocity == rhs.angularVelocity
     }
@@ -33,32 +75,32 @@ func ==(lhs: [NodeState], rhs: [NodeState]) -> Bool {
 }
 
 struct CompactNodeState: NodeState, Equatable {
-    let id: Int
+    let id: Int16
     let position: float3
-    let orientation: float4
+    let eulerAngles: float3
     var linearVelocity: float3 { return float3(0,0,0) }
     var angularVelocity: float3 { return float3(0,0,0) }
 
     static func ==(lhs: CompactNodeState, rhs: CompactNodeState) -> Bool {
         return lhs.id == rhs.id &&
             lhs.position == rhs.position &&
-            lhs.orientation == rhs.orientation &&
+            lhs.eulerAngles == rhs.eulerAngles &&
             lhs.linearVelocity == rhs.linearVelocity &&
             lhs.angularVelocity == rhs.angularVelocity
     }
 }
 
 struct FullNodeState: NodeState, Equatable {
-    let id: Int
+    let id: Int16
     let position: float3
-    let orientation: float4
+    let eulerAngles: float3
     let linearVelocity: float3
     let angularVelocity: float3
 
     static func ==(lhs: FullNodeState, rhs: FullNodeState) -> Bool {
         return lhs.id == rhs.id &&
             lhs.position == rhs.position &&
-            lhs.orientation == rhs.orientation &&
+            lhs.eulerAngles == rhs.eulerAngles &&
             lhs.linearVelocity == rhs.linearVelocity &&
             lhs.angularVelocity == rhs.angularVelocity
     }
@@ -82,41 +124,39 @@ struct Packet: Equatable, Comparable {
 }
 
 class PriorityAccumulator {
-    var all = [HasPriority]()
-
-    var priorities = [HasPriority:Float]()
+    var priorities = [Float](repeating: 0, count: Int(Int16.max))
 
     func update() {
-        for item in all {
-            priorities[item] = (priorities[item] ?? 0) + item.intrinsicPriority
+        for item in registry {
+            if let registered = item as? Registered,
+                let id = registered.id,
+                let prioritized = item as? HasPriority {
+                let original = priorities[Int(id)]
+                priorities[Int(id)] = priorities[Int(id)] + prioritized.intrinsicPriority
+            }
         }
     }
 
-    func top(_ count: Int) -> [HasPriority] {
-        let sorted = priorities.sorted { (np1, np2) -> Bool in
-            let (_, priority1) = np1
-            let (_, priority2) = np2
-
-            return priority1 > priority2
+    func top(_ count: Int) -> [SCNNode] {
+        let sorted = registry.sorted { (item1, item2) -> Bool in
+            if let id1 = item1.id, let id2 = item2.id {
+                return priorities[Int(id1)] > priorities[Int(id2)]
+            }
+            return false
         }
-        var result = [HasPriority]()
-        for (hasPriority, _) in sorted[0..<count] {
-            priorities[hasPriority] = 0
-            result.append(hasPriority)
+        var result = [SCNNode]()
+        for node in sorted[0..<count] {
+            if let id = node.id {
+                priorities[Int(id)] = 0
+                result.append(node)
+            }
         }
         return result
     }
 }
 
-struct HasPriority: Hashable {
-    var hashValue: Int { return node.hashValue }
-
-    static func ==(lhs: HasPriority, rhs: HasPriority) -> Bool {
-        return lhs.node == rhs.node
-    }
-
-    let intrinsicPriority: Float
-    let node: SCNNode
+protocol HasPriority {
+    var intrinsicPriority: Float { get }
 }
 
 class JitterBuffer {
