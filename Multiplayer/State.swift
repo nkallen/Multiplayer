@@ -41,6 +41,8 @@ protocol Registerable {
     func register() -> Registered
 }
 
+var totalError: Float = 0.0
+
 extension SCNNode: Registerable {
     func register() -> Registered {
         if let registered = node2registered[self] { return registered }
@@ -83,7 +85,7 @@ extension SCNScene {
                 let node = SCNNode(geometry: box)
                 node.simdPosition = float3(0, 10, 0)
                 node.physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
-                node.register()
+                _ = node.register()
                 rootNode.addChildNode(node)
                 node.update(to: update)
             }

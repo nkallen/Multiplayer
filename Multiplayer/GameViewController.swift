@@ -24,7 +24,7 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
         var i = 0
         while let packet = Packet(dataWrapper: dataWrapper) {
             i += 1
-            if i % 30 == 0 {
+            if i % 5 == 0 {
                 jitterBuffer.push(packet)
             }
         }
@@ -94,7 +94,11 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
         }
     }
 
+    func renderer(_ renderer: SCNSceneRenderer, willRenderScene scene: SCNScene, atTime time: TimeInterval) {
+    }
+
     func renderer(_ renderer: SCNSceneRenderer, didRenderScene scene: SCNScene, atTime time: TimeInterval) {
+
     }
 
     var data = NSMutableData()
