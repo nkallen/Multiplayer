@@ -19,15 +19,15 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
         setupGame()
 
         let url = documentDirectory.appendingPathComponent("packets.dat")
-        let data = try! Data(contentsOf: url)
-        let dataWrapper = DataWrapper(data)
-        var i = 0
-        while let packet = Packet(dataWrapper: dataWrapper) {
-            i += 1
-            if i % 5 == 0 {
-                jitterBuffer.push(packet)
-            }
-        }
+//        let data = try! Data(contentsOf: url)
+//        let dataWrapper = DataWrapper(data)
+//        var i = 0
+//        while let packet = Packet(dataWrapper: dataWrapper) {
+//            i += 1
+//            if i % 10 == 0 {
+//                jitterBuffer.push(packet)
+//            }
+//        }
     }
 
     // MARK: - GameKit
@@ -53,16 +53,25 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
     }
 
     var firstUpdateTime: TimeInterval?
+    var match: GKMatch?
     func startMatch() {
         let localPlayer = GKLocalPlayer.localPlayer()
         let matchRequest = GKMatchRequest()
         matchRequest.minPlayers = 2
+        matchRequest.maxPlayers = 2
+//        let vc = GKMatchmakerViewController(matchRequest: matchRequest)!
+//        vc.delegate = self
+//        present(vc, animated: true) { () in
+//            print("done")
+//        }
         GKMatchmaker.shared().findMatch(for: matchRequest) { (match, error) in
             if let match = match {
                 print("found match", match)
                 match.delegate = self
+                self.match = match
 
             }
+            print(error)
         }
     }
 
@@ -77,6 +86,10 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
     func match(_ match: GKMatch, player: GKPlayer, didChange state: GKPlayerConnectionState) {
         print(match.players, match.expectedPlayerCount)
         print("player", player, "changed state to", state)
+    }
+
+    func player(_ player: GKPlayer, didRequestMatchWithRecipients recipientPlayers: [GKPlayer]) {
+        print("hullo")
     }
 
     func frameCount(updatedAtTime time: TimeInterval) -> Int {
