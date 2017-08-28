@@ -38,12 +38,39 @@
                         <viewLayoutGuide key="safeArea" id="pDM-Zw-2y3"/>
                     </view>
                     <connections>
+                        <outlet property="nonRecordingView" destination="xIW-iN-iaX" id="LHs-3z-jeS"/>
+                        <outlet property="recordingButton" destination="Tfv-9s-5bx" id="xAn-1G-5RG"/>
                         <outlet property="sceneView" destination="Kkn-JB-ybS" id="uH2-sj-3ba"/>
                         <outlet property="sequenceLabel" destination="pQa-M2-hUI" id="WNN-Db-8hj"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="SZV-WD-TEh" sceneMemberID="firstResponder"/>
+                <view contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="YES" id="xIW-iN-iaX" userLabel="Non-Recording View">
+                    <rect key="frame" x="0.0" y="0.0" width="360" height="679"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                    <subviews>
+                        <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Tfv-9s-5bx" userLabel="Record Button">
+                            <rect key="frame" x="0.0" y="0.0" width="64" height="64"/>
+                            <color key="backgroundColor" white="0.0" alpha="0.5" colorSpace="calibratedWhite"/>
+                            <constraints>
+                                <constraint firstAttribute="width" constant="64" id="Fxc-vW-7ag"/>
+                                <constraint firstAttribute="height" constant="64" id="oD2-Ev-xFv"/>
+                            </constraints>
+                            <state key="normal" title="R"/>
+                            <connections>
+                                <action selector="didPressRecordButton:" destination="BV1-FR-VrT" eventType="touchUpInside" id="WZn-Sr-DaG"/>
+                            </connections>
+                        </button>
+                    </subviews>
+                    <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                    <constraints>
+                        <constraint firstItem="PEA-9U-NiK" firstAttribute="top" secondItem="Tfv-9s-5bx" secondAttribute="top" id="hEv-Io-sgR"/>
+                        <constraint firstItem="Tfv-9s-5bx" firstAttribute="leading" secondItem="PEA-9U-NiK" secondAttribute="leading" id="mcv-h2-JI8"/>
+                    </constraints>
+                    <viewLayoutGuide key="safeArea" id="PEA-9U-NiK"/>
+                </view>
             </objects>
+            <point key="canvasLocation" x="129" y="77"/>
         </scene>
     </scenes>
 </document>

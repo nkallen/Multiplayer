@@ -4,9 +4,11 @@ import SceneKit
 import GameKit
 
 class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelegate, SCNSceneRendererDelegate {
+    var screenRecordingManager: ScreenRecordingManager!
 
     @IBOutlet weak var sceneView: SCNView!
     @IBOutlet weak var sequenceLabel: UILabel!
+    @IBOutlet var nonRecordingView: UIView!
 
     enum State {
         case await
@@ -28,6 +30,11 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
 
         setupGame()
 
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        screenRecordingManager = ScreenRecordingManager(frame: view.frame, view: nonRecordingView)
     }
 
     // MARK: - GameKit
@@ -215,6 +222,19 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
         sceneView.delegate = self
     }
 
+    // MARK: - Recording
+
+    @IBOutlet weak var recordingButton: UIButton!
+
+    @IBAction func didPressRecordButton(_ sender: UIButton) {
+        if screenRecordingManager.isRecording {
+            screenRecordingManager.toggleRecording()
+            recordingButton.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        } else {
+            screenRecordingManager.toggleRecording()
+            self.recordingButton.backgroundColor = UIColor.red.withAlphaComponent(0.5)
+        }
+    }
 }
 
 extension SCNMaterial {

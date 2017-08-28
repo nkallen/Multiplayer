@@ -115,6 +115,8 @@ class JitterBuffer {
         guard sequence >= 0 else { return nil }
         guard sequence <= lastReceived else { return nil }
 
-        return buffer[sequence % buffer.count]
+        let result = buffer[sequence % buffer.count]
+        buffer[sequence % buffer.count] = nil
+        return result
     }
 }

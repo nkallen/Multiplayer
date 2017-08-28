@@ -19,6 +19,7 @@
 		9E6781571F54ACCA00757916 /* Registration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E6781561F54ACCA00757916 /* Registration.swift */; };
 		9E6781591F54ADD500757916 /* Networking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E6781581F54ADD500757916 /* Networking.swift */; };
 		9E67815B1F54AE8500757916 /* Serialization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E67815A1F54AE8500757916 /* Serialization.swift */; };
+		9EA108C61F54B27100E371D5 /* ScreenRecordingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EA108C51F54B27100E371D5 /* ScreenRecordingManager.swift */; };
 		9EAAF2091F520DFA007F210A /* GameKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9EAAF2081F520DFA007F210A /* GameKit.framework */; };
 /* End PBXBuildFile section */
 
@@ -57,6 +58,7 @@
 		9E6781561F54ACCA00757916 /* Registration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Registration.swift; sourceTree = "<group>"; };
 		9E6781581F54ADD500757916 /* Networking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking.swift; sourceTree = "<group>"; };
 		9E67815A1F54AE8500757916 /* Serialization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Serialization.swift; sourceTree = "<group>"; };
+		9EA108C51F54B27100E371D5 /* ScreenRecordingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenRecordingManager.swift; sourceTree = "<group>"; };
 		9EAAF2081F520DFA007F210A /* GameKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GameKit.framework; path = System/Library/Frameworks/GameKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -117,6 +119,7 @@
 				9E1A563E1F51F0B300A3773F /* Assets.xcassets */,
 				9E1A56401F51F0B300A3773F /* LaunchScreen.storyboard */,
 				9E1A56431F51F0B300A3773F /* Info.plist */,
+				9EA108C51F54B27100E371D5 /* ScreenRecordingManager.swift */,
 			);
 			path = Multiplayer;
 			sourceTree = "<group>";
@@ -292,6 +295,7 @@
 			files = (
 				9E6781571F54ACCA00757916 /* Registration.swift in Sources */,
 				9E6781591F54ADD500757916 /* Networking.swift in Sources */,
+				9EA108C61F54B27100E371D5 /* ScreenRecordingManager.swift in Sources */,
 				9E1A563A1F51F0B300A3773F /* GameViewController.swift in Sources */,
 				9E1A56361F51F0B300A3773F /* AppDelegate.swift in Sources */,
 				9E67815B1F54AE8500757916 /* Serialization.swift in Sources */,
