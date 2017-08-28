@@ -36,18 +36,19 @@ class StateTests: XCTestCase {
         XCTAssertEqual(packet, deserialized)
     }
 
-//    func xtestPriorityAccumulator() {
-//        let node1 = AdHocPriorityNode(priority: 1)
-//        let node2 = AdHocPriorityNode(priority: 1.1)
-//        node1.register(); node2.register()
-//        let priorityAccumulator = PriorityAccumulator()
-//        priorityAccumulator.update()
-//        XCTAssertEqual([node2], priorityAccumulator.top(1))
-//        priorityAccumulator.update()
-//        XCTAssertEqual([node1], priorityAccumulator.top(1))
-//        priorityAccumulator.update()
-//        XCTAssertEqual([node2], priorityAccumulator.top(1))
-//    }
+    func testPriorityAccumulator() {
+        let node1 = AdHocPriorityNode(priority: 1)
+        let node2 = AdHocPriorityNode(priority: 1.1)
+        let registered1 = node1.register()
+        let registered2 = node2.register()
+        let priorityAccumulator = PriorityAccumulator()
+        priorityAccumulator.update()
+        XCTAssertEqual([registered2], priorityAccumulator.top(1))
+        priorityAccumulator.update()
+        XCTAssertEqual([registered1], priorityAccumulator.top(1))
+        priorityAccumulator.update()
+        XCTAssertEqual([registered2], priorityAccumulator.top(1))
+    }
 
     func testJitterBuffer() {
         let p1 = Packet(sequence: 0, updates: [])

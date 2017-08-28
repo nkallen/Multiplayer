@@ -28,23 +28,14 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
 
         setupGame()
 
-//        let url = documentDirectory.appendingPathComponent("packets.dat")
-//        let data = try! Data(contentsOf: url)
-//        let dataWrapper = DataWrapper(data)
-//        var i = 0
-//        while let packet = Packet(dataWrapper: dataWrapper) {
-//            i += 1
-//            if i % 10 == 0 {
-//                jitterBuffer.push(packet)
-//            }
-//        }
     }
 
     // MARK: - GameKit
 
     var host: GKPlayer?
-
     var localPlayer: GKLocalPlayer!
+    var match: GKMatch?
+
     func setupGame() {
         localPlayer = GKLocalPlayer.localPlayer()
         localPlayer.authenticateHandler = { (viewController, error) in
@@ -54,33 +45,109 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
                     let window = delegate.window,
                     let rootViewController = window?.rootViewController {
                     rootViewController.present(viewController, animated: true) { () in
-                        print("completed")
+                        print("Completed Authentication")
                     }
                 } else {
-                    self.requestMatch()
+                    print("Auth success; sending match request")
+                    let matchRequest = GKMatchRequest()
+                    matchRequest.minPlayers = 2
+                    GKMatchmaker.shared().findMatch(for: matchRequest) { (match, error) in
+                        if let match = match {
+                            print("Found match", match)
+                            self.match = match
+                            match.delegate = self
+                        } else {
+                            print("Error finding match", error)
+                        }
+                    }
                 }
             }
         }
     }
 
-    var match: GKMatch?
-    func requestMatch() {
-        let matchRequest = GKMatchRequest()
-        matchRequest.minPlayers = 2
-        GKMatchmaker.shared().findMatch(for: matchRequest) { (match, error) in
-            if let match = match {
-                self.match = match
-                match.delegate = self
-            } else {
-                print("Error finding match", error)
+    func match(_ match: GKMatch, didFailWithError error: Error?) {
+        print("Match failure", error)
+    }
+
+    func match(_ match: GKMatch, player: GKPlayer, didChange state: GKPlayerConnectionState) {
+        print(match)
+        switch state {
+        case .stateUnknown:
+            print("player", player, "unknown")
+        case .stateDisconnected:
+            print("player", player, "disconnected")
+        case .stateConnected:
+            print("expectedplayercount", match.expectedPlayerCount)
+            if match.expectedPlayerCount == 0 { // Enough players have joined the match, let's play!
+                // Deterministically choose a host. Don't use `chooseBestHostingPlayer` because it
+                // takes too long.
+                let playersSorted = (match.players + [self.localPlayer]).sorted { (lhs, rhs) in
+                    lhs.playerID! < rhs.playerID!
+                }
+                self.host = playersSorted.first
+                self.state = .joinedMatch
+//                match.chooseBestHostingPlayer { best in
+//                    if let player = best {
+//                        print("found best")
+//                        self.host = best
+//                    } else {
+//                        print("error")
+//                    }
+//                }
             }
         }
     }
 
-    func match(_ match: GKMatch, didFailWithError error: Error?) {
-        print("didFailWithError", error)
+    // Monotonically increasing clock; basically this is the frame count.
+    func sequence(at currentTime: TimeInterval) -> Int? {
+        switch state {
+        case let .playing(startTime):
+            let deltaTime = currentTime - startTime
+            return Int(deltaTime * 60)
+        default: return nil
+        }
     }
 
+    // MARK: - Multiplayer Networking
+
+    /**
+     * In order to keep clocks synchronized, the host transitions to the .playing state as soon
+     * as it has joined a GameCenter match, noting its local time. Other players transition to the
+     * .playing state when they receive the first message from the host. This prevents the non-host
+     * players from having a clock far-ahead of the host, and thus ignoring all updates.
+     *
+     */
+
+    func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
+        renderer.isPlaying = true
+        switch state {
+        case .joinedMatch:
+            if localPlayer == host {
+                state = .playing(Date.timeIntervalSinceReferenceDate)
+            }
+        case .await: ()
+        case .playing(_):
+            let sequence = self.sequence(at: Date.timeIntervalSinceReferenceDate)!
+            DispatchQueue.main.async {
+                self.sequenceLabel.text = "\(sequence)"
+            }
+            // The host broadcasts updates,
+            if localPlayer == host {
+                let packet = sceneView.scene!.packet(sequence: sequence)
+                try! match!.sendData(toAllPlayers: packet.data, with: .unreliable)
+            } else { // and other players just listen (for now).
+                DispatchQueue.main.async {
+                    if let packet = self.jitterBuffer[sequence] {
+                        self.sceneView.scene!.apply(packet: packet)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Only non-host players receive updates for now.
+     */
     func match(_ match: GKMatch, didReceive data: Data, fromRemotePlayer player: GKPlayer) {
         DispatchQueue.main.async {
             switch self.state {
@@ -101,77 +168,7 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
         }
     }
 
-    func match(_ match: GKMatch, player: GKPlayer, didChange state: GKPlayerConnectionState) {
-        print(match)
-        switch state {
-        case .stateUnknown:
-            print("player", player, "unknown")
-        case .stateDisconnected:
-            print("player", player, "disconnected")
-        case .stateConnected:
-            print("expectedplayercount", match.expectedPlayerCount)
-            if match.expectedPlayerCount == 0 {
-                let playersSorted = (match.players + [self.localPlayer]).sorted { (lhs, rhs) in
-                    lhs.playerID! < rhs.playerID!
-                }
-                self.host = playersSorted.first
-                self.state = .joinedMatch
-                // FIXME: this takes forever AND it doesn't work in my home network conditions
-//                match.chooseBestHostingPlayer { best in
-//                    if let player = best {
-//                        print("found best")
-//                        self.host = best
-//                    } else {
-//                        print("error")
-//                    }
-//                }
-            }
-        }
-    }
-
-    func sequence(at currentTime: TimeInterval) -> Int? {
-        switch state {
-        case let .playing(startTime):
-            let deltaTime = currentTime - startTime
-            return Int(deltaTime * 60)
-        default: return nil
-        }
-    }
-
-    func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
-        renderer.isPlaying = true
-        switch state {
-        case .joinedMatch:
-            if localPlayer == host {
-                state = .playing(Date.timeIntervalSinceReferenceDate)
-            }
-        case .await: ()
-        case .playing(_):
-            let sequence = self.sequence(at: Date.timeIntervalSinceReferenceDate)!
-            DispatchQueue.main.async {
-                self.sequenceLabel.text = "\(sequence)"
-            }
-            if localPlayer == host {
-                let packet = sceneView.scene!.packet(sequence: sequence)
-                try! match!.sendData(toAllPlayers: packet.data, with: .unreliable)
-            } else {
-                DispatchQueue.main.async {
-                    if let packet = self.jitterBuffer[sequence] {
-                        self.sceneView.scene!.apply(packet: packet)
-                    }
-                }
-            }
-        }
-    }
-
-    func renderer(_ renderer: SCNSceneRenderer, willRenderScene scene: SCNScene, atTime time: TimeInterval) {
-    }
-
-    func renderer(_ renderer: SCNSceneRenderer, didRenderScene scene: SCNScene, atTime time: TimeInterval) {
-    }
-
-    func renderer(_ renderer: SCNSceneRenderer, didSimulatePhysicsAtTime time: TimeInterval) {
-    }
+    // Mark: Interaction
 
     @objc
     func handleTap(_ gestureRecognize: UIGestureRecognizer) {
@@ -187,6 +184,8 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
         node.register()
         sceneView.scene?.rootNode.addChildNode(node)
     }
+
+    // MARK: - Scene gunk
 
     func setupScene() {
         let scene = SCNScene(named: "art.scnassets/ship.scn")!
