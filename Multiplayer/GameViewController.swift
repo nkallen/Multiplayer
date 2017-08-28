@@ -82,20 +82,22 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
     }
 
     func match(_ match: GKMatch, didReceive data: Data, fromRemotePlayer player: GKPlayer) {
-        switch state {
-        case .playing(_):
-            if let packet = Packet(dataWrapper: DataWrapper(data)) {
-                jitterBuffer.push(packet)
-            }
-        case .joinedMatch:
-            if localPlayer != host {
-                state = .playing(Date.timeIntervalSinceReferenceDate)
+        DispatchQueue.main.async {
+            switch self.state {
+            case .playing(_):
                 if let packet = Packet(dataWrapper: DataWrapper(data)) {
-                    jitterBuffer.push(packet)
+                    self.jitterBuffer.push(packet)
                 }
+            case .joinedMatch:
+                if self.localPlayer != self.host {
+                    self.state = .playing(Date.timeIntervalSinceReferenceDate)
+                    if let packet = Packet(dataWrapper: DataWrapper(data)) {
+                        self.jitterBuffer.push(packet)
+                    }
+                }
+            default:
+                fatalError("Invalid state to receive data")
             }
-        default:
-            fatalError("Invalid state to receive data")
         }
     }
 
@@ -153,10 +155,11 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
                 let packet = sceneView.scene!.packet(sequence: sequence)
                 try! match!.sendData(toAllPlayers: packet.data, with: .unreliable)
             } else {
-                if let packet = jitterBuffer[sequence] {
-                    sceneView.scene!.apply(packet: packet)
+                DispatchQueue.main.async {
+                    if let packet = self.jitterBuffer[sequence] {
+                        self.sceneView.scene!.apply(packet: packet)
+                    }
                 }
-                renderer.isPlaying = true
             }
         }
     }
