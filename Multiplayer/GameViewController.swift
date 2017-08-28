@@ -5,6 +5,17 @@ import GameKit
 
 class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelegate, SCNSceneRendererDelegate {
 
+    @IBOutlet weak var sceneView: SCNView!
+    @IBOutlet weak var sequenceLabel: UILabel!
+
+    enum State {
+        case await
+        case joinedMatch
+        case playing(TimeInterval)
+    }
+
+    var state: State = .await
+
     let jitterBuffer = JitterBuffer(capacity: 1024)
 
     override func viewDidLoad() {
@@ -12,13 +23,12 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
 
         setupScene()
 
-        let scnView = self.view as! SCNView
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
-        scnView.addGestureRecognizer(tapGesture)
+        sceneView.addGestureRecognizer(tapGesture)
 
         setupGame()
 
-        let url = documentDirectory.appendingPathComponent("packets.dat")
+//        let url = documentDirectory.appendingPathComponent("packets.dat")
 //        let data = try! Data(contentsOf: url)
 //        let dataWrapper = DataWrapper(data)
 //        var i = 0
@@ -34,8 +44,9 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
 
     var host: GKPlayer?
 
+    var localPlayer: GKLocalPlayer!
     func setupGame() {
-        let localPlayer = GKLocalPlayer.localPlayer()
+        localPlayer = GKLocalPlayer.localPlayer()
         localPlayer.authenticateHandler = { (viewController, error) in
             if error == nil {
                 if let viewController = viewController,
@@ -46,64 +57,107 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
                         print("completed")
                     }
                 } else {
-                    self.startMatch()
+                    self.requestMatch()
                 }
             }
         }
     }
 
-    var firstUpdateTime: TimeInterval?
     var match: GKMatch?
-    func startMatch() {
-        let localPlayer = GKLocalPlayer.localPlayer()
+    func requestMatch() {
         let matchRequest = GKMatchRequest()
         matchRequest.minPlayers = 2
-        matchRequest.maxPlayers = 2
-//        let vc = GKMatchmakerViewController(matchRequest: matchRequest)!
-//        vc.delegate = self
-//        present(vc, animated: true) { () in
-//            print("done")
-//        }
         GKMatchmaker.shared().findMatch(for: matchRequest) { (match, error) in
             if let match = match {
-                print("found match", match)
-                match.delegate = self
                 self.match = match
-
+                match.delegate = self
+            } else {
+                print("Error finding match", error)
             }
-            print(error)
         }
     }
 
     func match(_ match: GKMatch, didFailWithError error: Error?) {
-        print("failure with error", error)
+        print("didFailWithError", error)
     }
 
     func match(_ match: GKMatch, didReceive data: Data, fromRemotePlayer player: GKPlayer) {
-        print("did receive data")
+        switch state {
+        case .playing(_):
+            if let packet = Packet(dataWrapper: DataWrapper(data)) {
+                jitterBuffer.push(packet)
+            }
+        case .joinedMatch:
+            if localPlayer != host {
+                state = .playing(Date.timeIntervalSinceReferenceDate)
+                if let packet = Packet(dataWrapper: DataWrapper(data)) {
+                    jitterBuffer.push(packet)
+                }
+            }
+        default:
+            fatalError("Invalid state to receive data")
+        }
     }
 
     func match(_ match: GKMatch, player: GKPlayer, didChange state: GKPlayerConnectionState) {
-        print(match.players, match.expectedPlayerCount)
-        print("player", player, "changed state to", state)
+        print(match)
+        switch state {
+        case .stateUnknown:
+            print("player", player, "unknown")
+        case .stateDisconnected:
+            print("player", player, "disconnected")
+        case .stateConnected:
+            print("expectedplayercount", match.expectedPlayerCount)
+            if match.expectedPlayerCount == 0 {
+                let playersSorted = (match.players + [self.localPlayer]).sorted { (lhs, rhs) in
+                    lhs.playerID! < rhs.playerID!
+                }
+                self.host = playersSorted.first
+                self.state = .joinedMatch
+                // FIXME: this takes forever AND it doesn't work in my home network conditions
+//                match.chooseBestHostingPlayer { best in
+//                    if let player = best {
+//                        print("found best")
+//                        self.host = best
+//                    } else {
+//                        print("error")
+//                    }
+//                }
+            }
+        }
     }
 
-    func player(_ player: GKPlayer, didRequestMatchWithRecipients recipientPlayers: [GKPlayer]) {
-        print("hullo")
-    }
-
-    func frameCount(updatedAtTime time: TimeInterval) -> Int {
-        let deltaTime: TimeInterval = time - self.firstUpdateTime!
-        return Int(deltaTime * 60)
+    func sequence(at currentTime: TimeInterval) -> Int? {
+        switch state {
+        case let .playing(startTime):
+            let deltaTime = currentTime - startTime
+            return Int(deltaTime * 60)
+        default: return nil
+        }
     }
 
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
-        if firstUpdateTime == nil {
-            self.firstUpdateTime = time
-        }
-        let scnView = self.view as! SCNView
-        if let packet = jitterBuffer[frameCount(updatedAtTime: time)] {
-            scnView.scene!.apply(packet: packet)
+        renderer.isPlaying = true
+        switch state {
+        case .joinedMatch:
+            if localPlayer == host {
+                state = .playing(Date.timeIntervalSinceReferenceDate)
+            }
+        case .await: ()
+        case .playing(_):
+            let sequence = self.sequence(at: Date.timeIntervalSinceReferenceDate)!
+            DispatchQueue.main.async {
+                self.sequenceLabel.text = "\(sequence)"
+            }
+            if localPlayer == host {
+                let packet = sceneView.scene!.packet(sequence: sequence)
+                try! match!.sendData(toAllPlayers: packet.data, with: .unreliable)
+            } else {
+                if let packet = jitterBuffer[sequence] {
+                    sceneView.scene!.apply(packet: packet)
+                }
+                renderer.isPlaying = true
+            }
         }
     }
 
@@ -111,21 +165,9 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
     }
 
     func renderer(_ renderer: SCNSceneRenderer, didRenderScene scene: SCNScene, atTime time: TimeInterval) {
-
     }
 
-    var data = NSMutableData()
-    let documentDirectory = FileManager.default.urls(for: .documentDirectory, in:.userDomainMask).first!
-
     func renderer(_ renderer: SCNSceneRenderer, didSimulatePhysicsAtTime time: TimeInterval) {
-//        let scnView = self.view as! SCNView
-//        let packet = scnView.scene!.packet(sequence: frameCount)
-//        data.append(packet.data)
-//        if frameCount == 1000 {
-//            print("writing....")
-//            //            try! data.write(to: documentDirectory.appendingPathComponent("packets.dat"))
-//        }
-
     }
 
     @objc
@@ -134,14 +176,13 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
     }
 
     func createBox() {
-        let scnView = self.view as! SCNView
         let box = SCNBox(width: 1, height: 1, length: 1, chamferRadius: 0)
         box.firstMaterial = SCNMaterial.material(withDiffuse: UIColor.blue.withAlphaComponent(0.5))
         let node = SCNNode(geometry: box)
         node.simdPosition = float3(0, 10, 0)
         node.physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
         node.register()
-        scnView.scene?.rootNode.addChildNode(node)
+        sceneView.scene?.rootNode.addChildNode(node)
     }
 
     func setupScene() {
@@ -164,13 +205,12 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
         ambientLightNode.light!.color = UIColor.darkGray
         scene.rootNode.addChildNode(ambientLightNode)
 
-        let scnView = self.view as! SCNView
-        scnView.scene = scene
-        scnView.allowsCameraControl = true
-        scnView.showsStatistics = true
-        scnView.backgroundColor = UIColor.black
+        sceneView.scene = scene
+        sceneView.allowsCameraControl = true
+        sceneView.showsStatistics = true
+        sceneView.backgroundColor = UIColor.black
 
-        scnView.delegate = self
+        sceneView.delegate = self
     }
 
 }
