@@ -85,6 +85,9 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
         case .stateDisconnected:
             print("player", player, "disconnected")
         case .stateConnected:
+            DispatchQueue.main.async {
+                self.sequenceLabel.text = "Connected"
+            }
             if match.expectedPlayerCount == 0 { // Enough players have joined the match, let's play!
                 // Deterministically choose a host. Don't use `chooseBestHostingPlayer` because it
                 // takes too long.
@@ -122,27 +125,31 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
      * players from having a clock far-ahead of the host, and thus ignoring all updates.
      *
      */
+    var count = 0
 
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
         renderer.isPlaying = true
+        count += 1
         switch state {
         case .await: ()
         case let .sending(localStartTime):
             let localSequence = self.sequence(at: Date.timeIntervalSinceReferenceDate, from: localStartTime)
             let packet = localState.packet(at: localSequence)
-            try! match!.sendData(toAllPlayers: packet.data, with: .unreliable)
+            if count % 5 == 0 {
+                try! match!.sendData(toAllPlayers: packet.data, with: .unreliable)
+            }
         case let .sendingAndReceiving(localStartTime, remoteStartTime):
             let localSequence = self.sequence(at: Date.timeIntervalSinceReferenceDate, from: localStartTime)
             let packet = localState.packet(at: localSequence)
-            try! match!.sendData(toAllPlayers: packet.data, with: .unreliable)
+            if count % 5 == 0 {
+                try! match!.sendData(toAllPlayers: packet.data, with: .unreliable)
+            }
 
             let remoteSequence = self.sequence(at: Date.timeIntervalSinceReferenceDate, from: remoteStartTime)
             DispatchQueue.main.async {
                 if let packet = self.remoteState.jitterBuffer[remoteSequence] {
                     self.remoteState.apply(packet: packet, to: self.sceneView.scene!)
                 }
-
-                self.sequenceLabel.text = "\(localSequence), \(remoteSequence)"
             }
         }
     }
