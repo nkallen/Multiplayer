@@ -10,15 +10,16 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
     @IBOutlet weak var sequenceLabel: UILabel!
     @IBOutlet var nonRecordingView: UIView!
 
+    let localState = StateSynchronizer()
+    let remoteState = StateSynchronizer()
+
     enum State {
         case await
-        case joinedMatch
-        case playing(TimeInterval)
+        case sending(TimeInterval)
+        case sendingAndReceiving(TimeInterval, TimeInterval)
     }
 
     var state: State = .await
-
-    let jitterBuffer = JitterBuffer(capacity: 1024)
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -77,14 +78,13 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
     }
 
     func match(_ match: GKMatch, player: GKPlayer, didChange state: GKPlayerConnectionState) {
-        print(match)
+        print("player", player, "match", match)
         switch state {
         case .stateUnknown:
             print("player", player, "unknown")
         case .stateDisconnected:
             print("player", player, "disconnected")
         case .stateConnected:
-            print("expectedplayercount", match.expectedPlayerCount)
             if match.expectedPlayerCount == 0 { // Enough players have joined the match, let's play!
                 // Deterministically choose a host. Don't use `chooseBestHostingPlayer` because it
                 // takes too long.
@@ -92,8 +92,10 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
                     lhs.playerID! < rhs.playerID!
                 }
                 self.host = playersSorted.first
-                self.state = .joinedMatch
-//                match.chooseBestHostingPlayer { best in
+                DispatchQueue.main.async {
+                    self.state = .sending(Date.timeIntervalSinceReferenceDate)
+                }
+                //                match.chooseBestHostingPlayer { best in
 //                    if let player = best {
 //                        print("found best")
 //                        self.host = best
@@ -106,13 +108,9 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
     }
 
     // Monotonically increasing clock; basically this is the frame count.
-    func sequence(at currentTime: TimeInterval) -> Int? {
-        switch state {
-        case let .playing(startTime):
-            let deltaTime = currentTime - startTime
-            return Int(deltaTime * 60)
-        default: return nil
-        }
+    func sequence(at currentTime: TimeInterval, from startTime: TimeInterval) -> Int {
+        let deltaTime = currentTime - startTime
+        return Int(deltaTime * 60)
     }
 
     // MARK: - Multiplayer Networking
@@ -128,45 +126,39 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
         renderer.isPlaying = true
         switch state {
-        case .joinedMatch:
-            if localPlayer == host {
-                state = .playing(Date.timeIntervalSinceReferenceDate)
-            }
         case .await: ()
-        case .playing(_):
-            let sequence = self.sequence(at: Date.timeIntervalSinceReferenceDate)!
+        case let .sending(localStartTime):
+            let localSequence = self.sequence(at: Date.timeIntervalSinceReferenceDate, from: localStartTime)
+            let packet = localState.packet(at: localSequence)
+            try! match!.sendData(toAllPlayers: packet.data, with: .unreliable)
+        case let .sendingAndReceiving(localStartTime, remoteStartTime):
+            let localSequence = self.sequence(at: Date.timeIntervalSinceReferenceDate, from: localStartTime)
+            let packet = localState.packet(at: localSequence)
+            try! match!.sendData(toAllPlayers: packet.data, with: .unreliable)
+
+            let remoteSequence = self.sequence(at: Date.timeIntervalSinceReferenceDate, from: remoteStartTime)
             DispatchQueue.main.async {
-                self.sequenceLabel.text = "\(sequence)"
-            }
-            // The host broadcasts updates,
-            if localPlayer == host {
-                let packet = sceneView.scene!.packet(sequence: sequence)
-                try! match!.sendData(toAllPlayers: packet.data, with: .unreliable)
-            } else { // and other players just listen (for now).
-                DispatchQueue.main.async {
-                    if let packet = self.jitterBuffer[sequence] {
-                        self.sceneView.scene!.apply(packet: packet)
-                    }
+                if let packet = self.remoteState.jitterBuffer[remoteSequence] {
+                    self.remoteState.apply(packet: packet, to: self.sceneView.scene!)
                 }
+
+                self.sequenceLabel.text = "\(localSequence), \(remoteSequence)"
             }
         }
     }
 
-    /**
-     * Only non-host players receive updates for now.
-     */
     func match(_ match: GKMatch, didReceive data: Data, fromRemotePlayer player: GKPlayer) {
         DispatchQueue.main.async {
             switch self.state {
-            case .playing(_):
+            case .sendingAndReceiving(_, _):
                 if let packet = Packet(dataWrapper: DataWrapper(data)) {
-                    self.jitterBuffer.push(packet)
+                    self.remoteState.jitterBuffer.push(packet)
                 }
-            case .joinedMatch:
-                if self.localPlayer != self.host {
-                    self.state = .playing(Date.timeIntervalSinceReferenceDate)
+            case let .sending(localStartTime):
+                DispatchQueue.main.async {
+                    self.state = .sendingAndReceiving(localStartTime, Date.timeIntervalSinceReferenceDate)
                     if let packet = Packet(dataWrapper: DataWrapper(data)) {
-                        self.jitterBuffer.push(packet)
+                        self.remoteState.jitterBuffer.push(packet)
                     }
                 }
             default:
@@ -188,7 +180,7 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
         let node = SCNNode(geometry: box)
         node.simdPosition = float3(0, 10, 0)
         node.physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
-        node.register()
+        _ = localState.register(node)
         sceneView.scene?.rootNode.addChildNode(node)
     }
 
@@ -201,6 +193,7 @@ class GameViewController: UIViewController, GKLocalPlayerListener, GKMatchDelega
         cameraNode.camera = SCNCamera()
         scene.rootNode.addChildNode(cameraNode)
         cameraNode.position = SCNVector3(x: 0, y: 0, z: 15)
+        _ = localState.register(cameraNode)
 
         let lightNode = SCNNode()
         lightNode.light = SCNLight()

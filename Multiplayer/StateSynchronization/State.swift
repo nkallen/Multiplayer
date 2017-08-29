@@ -1,8 +1,6 @@
 import Foundation
 import SceneKit
 
-fileprivate let priorityAccumulator = PriorityAccumulator()
-
 extension SCNNode {
     func update(to state: NodeState) {
         simdPosition = state.position
@@ -12,38 +10,6 @@ extension SCNNode {
             physicsBody.angularVelocity = SCNVector4(state.angularVelocity)
             physicsBody.resetTransform()
         }
-    }
-}
-
-extension SCNScene {
-    func packet(sequence: Int) -> Packet {
-        let sequence = Int16(sequence % Int(Int16.max))
-        priorityAccumulator.update()
-        return Packet(sequence: sequence, updates: priorityAccumulator.top(Packet.maxStateUpdatesPerPacket).map { $0.state })
-    }
-
-    func apply(packet: Packet) {
-        for update in packet.updates {
-            if let node = id2node[update.id] {
-                node.update(to: update)
-            } else {
-                // This is temporary/a hack: if we observe an update to a node that doesn't exist,
-                // create it.
-                let node = createNodeOutOfThinAir()
-                node.update(to: update)
-            }
-        }
-    }
-
-    private func createNodeOutOfThinAir() -> SCNNode {
-        let box = SCNBox(width: 1, height: 1, length: 1, chamferRadius: 0)
-        box.firstMaterial = SCNMaterial.material(withDiffuse: UIColor.blue.withAlphaComponent(0.5))
-        let node = SCNNode(geometry: box)
-        node.simdPosition = float3(0, 10, 0)
-        node.physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
-        _ = node.register()
-        rootNode.addChildNode(node)
-        return node
     }
 }
 

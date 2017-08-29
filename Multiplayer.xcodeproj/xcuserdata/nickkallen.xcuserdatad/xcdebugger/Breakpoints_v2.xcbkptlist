@@ -10,11 +10,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Multiplayer/GameViewController.swift"
-            timestampString = "525645549.009794"
+            timestampString = "525659953.034662"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "49"
-            endingLineNumber = "49"
+            startingLineNumber = "50"
+            endingLineNumber = "50"
             landmarkName = "setupGame()"
             landmarkType = "7">
             <Locations>
@@ -58,12 +58,28 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Multiplayer/GameViewController.swift"
-            timestampString = "525645549.010275"
+            timestampString = "525659953.035084"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "130"
-            endingLineNumber = "130"
+            startingLineNumber = "128"
+            endingLineNumber = "128"
             landmarkName = "renderer(_:updateAtTime:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Multiplayer/GameViewController.swift"
+            timestampString = "525659953.035368"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "154"
+            endingLineNumber = "154"
+            landmarkName = "match(_:didReceive:fromRemotePlayer:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

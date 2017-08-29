@@ -59,7 +59,7 @@ protocol HasPriority {
 class PriorityAccumulator {
     var priorities = [Float](repeating: 0, count: Int(Int16.max))
 
-    func update() {
+    func update(registry: Set<Registered>) {
         for registered in registry {
             if let prioritized = registered.value as? HasPriority {
                 let id = registered.id
@@ -68,7 +68,7 @@ class PriorityAccumulator {
         }
     }
 
-    func top(_ count: Int) -> [Registered] {
+    func top(_ count: Int, in registry: Set<Registered>) -> [Registered] {
         let sorted = registry.sorted { (item1, item2) -> Bool in
             let id1 = item1.id
             let id2 = item2.id
