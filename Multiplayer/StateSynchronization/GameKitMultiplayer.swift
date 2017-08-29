@@ -4,20 +4,22 @@ import GameKit
 class GameKitMultiplayer: NSObject, GKMatchDelegate {
     let localState = StateSynchronizer()
     let remoteState = StateSynchronizer()
+    let sendPeriod = 1
 
     enum State {
-        case waitingForMatch
+        case waitingForLogin
+        case loggedIn
         case foundMatch(GKMatch)
         case sending(GKMatch, host: GKPlayer, localStartTime: TimeInterval)
         case sendingAndReceiving(GKMatch, host: GKPlayer, localStartTime: TimeInterval, remoteStartTime: TimeInterval)
     }
 
-    var state: State = .waitingForMatch
+    var state: State = .waitingForLogin
 
     // MARK: - GameKit
 
-    override init() {
-        super.init()
+
+    func login(andThen: @escaping () -> ()) {
         let localPlayer = GKLocalPlayer.localPlayer()
         localPlayer.authenticateHandler = { (viewController, error) in
             if error == nil {
@@ -30,19 +32,34 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
                     }
                 } else {
                     print("Auth success; sending match request")
-                    let matchRequest = GKMatchRequest()
-                    matchRequest.minPlayers = 2
-                    GKMatchmaker.shared().findMatch(for: matchRequest) { (match, error) in
-                        if let match = match {
-                            print("Found match", match)
-                            self.state = .foundMatch(match)
-                            match.delegate = self
-                        } else {
-                            print("Error finding match", error)
-                        }
+                    DispatchQueue.main.async {
+                        self.state = .loggedIn
+                        andThen()
                     }
                 }
             }
+        }
+    }
+
+    func sendMatchRequest(referenceNode: SCNNode) {
+        switch state {
+        case .loggedIn:
+            self.localState.referenceNode = referenceNode
+            self.remoteState.referenceNode = referenceNode
+            let matchRequest = GKMatchRequest()
+            matchRequest.minPlayers = 2
+            GKMatchmaker.shared().findMatch(for: matchRequest) { (match, error) in
+                if let match = match {
+                    print("Found match", match)
+                    self.state = .foundMatch(match)
+                    match.delegate = self
+                } else {
+                    print("Error finding match", error)
+                }
+            }
+        case .waitingForLogin:
+            login { self.sendMatchRequest(referenceNode: referenceNode) }
+        default: fatalError("Already in match")
         }
     }
 
@@ -106,17 +123,20 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
     func renderedFrame(updateAtTime time: TimeInterval, of scene: SCNScene) {
         count += 1
         switch state {
-        case .waitingForMatch, .foundMatch(_): ()
+        case .waitingForLogin, .loggedIn, .foundMatch(_):
+            let localSequence = self.sequence(at: Date.timeIntervalSinceReferenceDate, from: Date.timeIntervalSinceReferenceDate)
+            ()
+        let packet = localState.packet(at: localSequence)
         case let .sending(match, _, localStartTime):
             let localSequence = self.sequence(at: Date.timeIntervalSinceReferenceDate, from: localStartTime)
             let packet = localState.packet(at: localSequence)
-            if count % 5 == 0 {
+            if count % sendPeriod == 0 {
                 try! match.sendData(toAllPlayers: packet.data, with: .unreliable)
             }
         case let .sendingAndReceiving(match, _, localStartTime, remoteStartTime):
             let localSequence = self.sequence(at: Date.timeIntervalSinceReferenceDate, from: localStartTime)
             let packet = localState.packet(at: localSequence)
-            if count % 5 == 0 {
+            if count % sendPeriod == 0 {
                 try! match.sendData(toAllPlayers: packet.data, with: .unreliable)
             }
 
