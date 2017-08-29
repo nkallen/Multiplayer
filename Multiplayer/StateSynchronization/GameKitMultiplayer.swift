@@ -6,13 +6,13 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
     let remoteState = StateSynchronizer()
 
     enum State {
-        case await
+        case waitingForMatch
         case foundMatch(GKMatch)
-        case sending(GKMatch, GKPlayer, TimeInterval)
-        case sendingAndReceiving(GKMatch, GKPlayer, TimeInterval, TimeInterval)
+        case sending(GKMatch, host: GKPlayer, localStartTime: TimeInterval)
+        case sendingAndReceiving(GKMatch, host: GKPlayer, localStartTime: TimeInterval, remoteStartTime: TimeInterval)
     }
 
-    var state: State = .await
+    var state: State = .waitingForMatch
 
     // MARK: - GameKit
 
@@ -69,7 +69,7 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
                     }
                     let host = playersSorted.first!
                     DispatchQueue.main.async {
-                        self.state = .sending(match_, host, Date.timeIntervalSinceReferenceDate)
+                        self.state = .sending(match_, host: host, localStartTime: Date.timeIntervalSinceReferenceDate)
                     }
                     //                match.chooseBestHostingPlayer { best in
                     //                    if let player = best {
@@ -106,7 +106,7 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
     func renderedFrame(updateAtTime time: TimeInterval, of scene: SCNScene) {
         count += 1
         switch state {
-        case .await, .foundMatch(_): ()
+        case .waitingForMatch, .foundMatch(_): ()
         case let .sending(match, _, localStartTime):
             let localSequence = self.sequence(at: Date.timeIntervalSinceReferenceDate, from: localStartTime)
             let packet = localState.packet(at: localSequence)
@@ -139,7 +139,7 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
             case let .sending(match, host, localStartTime):
                 let remoteStartTime = Date.timeIntervalSinceReferenceDate
                 DispatchQueue.main.async {
-                    self.state = .sendingAndReceiving(match, host, localStartTime, remoteStartTime)
+                    self.state = .sendingAndReceiving(match, host: host, localStartTime: localStartTime, remoteStartTime: remoteStartTime)
                     if let packet = Packet(dataWrapper: DataWrapper(data)) {
                         self.remoteState.jitterBuffer.push(packet)
                     }
