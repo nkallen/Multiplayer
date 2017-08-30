@@ -74,10 +74,7 @@ struct Registered: Hashable, Equatable {
         let transform = referenceNode.simdConvertTransform(value.presentation.simdWorldTransform, from: nil)
         let position = float3(transform.columns.3.x, transform.columns.3.y, transform.columns.3.z)
         let orientation = simd_quaternion(transform).vector
-//        let position = float3(0, 0, 0)
-//        let orientation = float4(0,0,0,0)
-//        let orientation = value.presentation.simdWorldOrientation.vector
-//        let position = float3(0,0,0)
+//        print("in state:", value.presentation.simdWorldPosition, value.presentation.simdWorldOrientation)
 
         if let physicsBody = value.physicsBody {
             if !physicsBody.isResting &&

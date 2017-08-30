@@ -2,9 +2,15 @@ import Foundation
 import SceneKit
 
 extension SCNNode {
-    func update(to state: NodeState) {
-        simdPosition = state.position
-        simdEulerAngles = state.eulerAngles
+    func update(to state: NodeState, with referenceNode: SCNNode) {
+        let position = state.position
+        let orientation = simd_quatf(ix: state.orientation.x, iy: state.orientation.y, iz: state.orientation.z, r: state.orientation.w)
+        var transform = float4x4(orientation)
+        transform.columns.3 = float4(position.x, position.y, position.z, 1)
+
+        simdWorldTransform = referenceNode.simdWorldTransform * transform
+//        print("in update:", simdWorldPosition, simdWorldOrientation)
+
         if let physicsBody = physicsBody {
             physicsBody.velocity = SCNVector3(state.linearVelocity)
             physicsBody.angularVelocity = SCNVector4(state.angularVelocity)
@@ -16,7 +22,7 @@ extension SCNNode {
 protocol NodeState: DataConvertible {
     var id: Int16 { get }
     var position: float3 { get }
-    var eulerAngles: float3 { get }
+    var orientation: float4 { get }
     var linearVelocity: float3 { get }
     var angularVelocity: float4 { get }
 }
@@ -26,7 +32,7 @@ extension NodeState {
         let lhs = self
         return lhs.id == rhs.id &&
             lhs.position == rhs.position &&
-            lhs.eulerAngles == rhs.eulerAngles &&
+            lhs.orientation == rhs.orientation &&
             lhs.linearVelocity == rhs.linearVelocity &&
             lhs.angularVelocity == rhs.angularVelocity
     }
@@ -47,14 +53,14 @@ func ==(lhs: [NodeState], rhs: [NodeState]) -> Bool {
 struct CompactNodeState: NodeState, Equatable {
     let id: Int16
     let position: float3
-    let eulerAngles: float3
+    let orientation: float4
     var linearVelocity: float3 { return float3(0,0,0) }
     var angularVelocity: float4 { return float4(0,0,0,0) }
 
     static func ==(lhs: CompactNodeState, rhs: CompactNodeState) -> Bool {
         return lhs.id == rhs.id &&
             lhs.position == rhs.position &&
-            lhs.eulerAngles == rhs.eulerAngles &&
+            lhs.orientation == rhs.orientation &&
             lhs.linearVelocity == rhs.linearVelocity &&
             lhs.angularVelocity == rhs.angularVelocity
     }
@@ -63,14 +69,14 @@ struct CompactNodeState: NodeState, Equatable {
 struct FullNodeState: NodeState, Equatable {
     let id: Int16
     let position: float3
-    let eulerAngles: float3
+    let orientation: float4
     let linearVelocity: float3
     let angularVelocity: float4
 
     static func ==(lhs: FullNodeState, rhs: FullNodeState) -> Bool {
         return lhs.id == rhs.id &&
             lhs.position == rhs.position &&
-            lhs.eulerAngles == rhs.eulerAngles &&
+            lhs.orientation == rhs.orientation &&
             lhs.linearVelocity == rhs.linearVelocity &&
             lhs.angularVelocity == rhs.angularVelocity
     }

@@ -82,13 +82,13 @@ extension FullNodeState: DataConvertible {
         guard dataWrapper.count == FullNodeState.sizeInBytes,
             let id = Int16(dataWrapper: dataWrapper),
             let position = float3(dataWrapper: dataWrapper),
-            let eulerAngles = float3(dataWrapper: dataWrapper),
+            let orientation = float4(dataWrapper: dataWrapper),
             let linearVelocity = float3(dataWrapper: dataWrapper),
             let angularVelocity = float4(dataWrapper: dataWrapper) else { return nil }
 
         self.id = id
         self.position = position
-        self.eulerAngles = eulerAngles
+        self.orientation = orientation
         self.linearVelocity = linearVelocity
         self.angularVelocity = angularVelocity
     }
@@ -97,7 +97,7 @@ extension FullNodeState: DataConvertible {
         let mutableData = NSMutableData()
         mutableData.append(id.data)
         mutableData.append(position.data)
-        mutableData.append(eulerAngles.data)
+        mutableData.append(orientation.data)
         mutableData.append(linearVelocity.data)
         mutableData.append(angularVelocity.data)
         return mutableData as Data
@@ -111,18 +111,18 @@ extension CompactNodeState: DataConvertible {
         guard dataWrapper.count >= CompactNodeState.sizeInBytes,
             let id = Int16(dataWrapper: dataWrapper),
             let position = float3(dataWrapper: dataWrapper),
-            let eulerAngles = float3(dataWrapper: dataWrapper) else { return nil }
+            let orientation = float4(dataWrapper: dataWrapper) else { return nil }
 
         self.id = id
         self.position = position
-        self.eulerAngles = eulerAngles
+        self.orientation = orientation
     }
 
     var data: Data {
         let mutableData = NSMutableData()
         mutableData.append(id.data)
         mutableData.append(position.data)
-        mutableData.append(eulerAngles.data)
+        mutableData.append(orientation.data)
         return mutableData as Data
     }
 }

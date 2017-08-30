@@ -57,6 +57,7 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
                     print("Error finding match", error)
                 }
             }
+//            self.state = .sendingAndReceiving(GKMatch(), host: GKLocalPlayer.localPlayer(), localStartTime: Date.timeIntervalSinceReferenceDate, remoteStartTime: Date.timeIntervalSinceReferenceDate)
         case .waitingForLogin:
             login { self.sendMatchRequest(referenceNode: referenceNode) }
         default: fatalError("Already in match")
@@ -126,7 +127,7 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
         case .waitingForLogin, .loggedIn, .foundMatch(_):
             let localSequence = self.sequence(at: Date.timeIntervalSinceReferenceDate, from: Date.timeIntervalSinceReferenceDate)
             ()
-        let packet = localState.packet(at: localSequence)
+            _ = localState.packet(at: localSequence)
         case let .sending(match, _, localStartTime):
             let localSequence = self.sequence(at: Date.timeIntervalSinceReferenceDate, from: localStartTime)
             let packet = localState.packet(at: localSequence)
@@ -135,17 +136,23 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
             }
         case let .sendingAndReceiving(match, _, localStartTime, remoteStartTime):
             let localSequence = self.sequence(at: Date.timeIntervalSinceReferenceDate, from: localStartTime)
+            print("=>", localSequence)
             let packet = localState.packet(at: localSequence)
-            if count % sendPeriod == 0 {
-                try! match.sendData(toAllPlayers: packet.data, with: .unreliable)
-            }
+//            if count % sendPeriod == 0 {
+//                try! match.sendData(toAllPlayers: packet.data, with: .unreliable)
+//            }
+
+            let data = packet.data
+            let packetD = Packet(dataWrapper: DataWrapper(data))!
+            self.remoteState.jitterBuffer.push(packetD)
 
             let remoteSequence = self.sequence(at: Date.timeIntervalSinceReferenceDate, from: remoteStartTime)
-            DispatchQueue.main.async {
+            print("<=", remoteSequence)
+//            DispatchQueue.main.async {
                 if let packet = self.remoteState.jitterBuffer[remoteSequence] {
                     self.remoteState.apply(packet: packet, to: scene)
                 }
-            }
+//            }
         }
     }
 
