@@ -6,6 +6,8 @@ import SceneKit
  * and a state.
  */
 
+// TODO FIXME: Int16 -> UInt16; sep ReadStateSync from WriteStateSync
+
 class StateSynchronizer {
     var registry = Set<Registered>()
     var node2registered = [SCNNode:Registered]()
@@ -14,18 +16,23 @@ class StateSynchronizer {
     let priorityAccumulator = PriorityAccumulator()
     let jitterBuffer = JitterBuffer(capacity: 1024)
     var referenceNode: SCNNode?
-    var inputBuffer = InputBuffer(capacity: 1024)
+    var inputWindowBuffer = InputWindowBuffer(capacity: 1024)
+    let inputWriteQueue = InputWriteQueue()
+    let inputReadQueue = InputReadQueue(capacity: Packet.maxInputsPerPacket)
 
     func packet(at sequence: Int) -> Packet {
         let sequenceTruncated = Int16(sequence % Int(Int16.max))
+
         priorityAccumulator.update(registry: registry)
         let inThisPacket = priorityAccumulator.top(Packet.maxStateUpdatesPerPacket, in: registry)
         let updates = inThisPacket.map { $0.state(with: referenceNode ?? SCNNode()) }
-        let inputs = inputBuffer.top(Packet.maxInputsPerPacket, at: sequenceTruncated)
+
+        inputWriteQueue.write(to: inputWindowBuffer, at: sequenceTruncated)
+        let inputs = inputWindowBuffer.top(Packet.maxInputsPerPacket, at: sequenceTruncated)
         return Packet(sequence: sequenceTruncated, updates: updates, inputs: inputs)
     }
 
-    func apply(packet: Packet, to scene: SCNScene) {
+    func apply(packet: Packet, to scene: SCNScene, with inputInterpreter: InputInterpreter) {
         for state in packet.updates {
             if let node = id2node[state.id] {
                 node.update(to: state, with: referenceNode ?? SCNNode())
@@ -52,8 +59,8 @@ class StateSynchronizer {
         return registered
     }
 
-    func register(_ input: Input) {
-        inputBuffer.push(input)
+    func event(type: UInt8, id: Int16) {
+        inputWriteQueue.push(type: type, id: id)
     }
 
     private func createNodeOutOfThinAir(scene: SCNScene) -> SCNNode {

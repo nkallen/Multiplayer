@@ -86,7 +86,7 @@ struct FullNodeState: NodeState, Equatable {
 
 // MARK: - Input
 
-struct Input: Equatable {
+struct Input: Equatable, Hashable {
     let sequence: Int16
     let type: UInt8
     let nodeId: Int16
@@ -95,5 +95,9 @@ struct Input: Equatable {
         return lhs.sequence == rhs.sequence &&
             lhs.type == rhs.type &&
             lhs.nodeId == rhs.nodeId
+    }
+
+    var hashValue: Int {
+        return Int(sequence)
     }
 }

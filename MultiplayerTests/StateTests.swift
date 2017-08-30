@@ -57,7 +57,7 @@ class StateTests: XCTestCase {
         let input3 = Input(sequence: 2, type: 1, nodeId: 1)
         let input4 = Input(sequence: 3, type: 1, nodeId: 2)
         let input5 = Input(sequence: 4, type: 1, nodeId: 3)
-        let inputBuffer = InputBuffer(capacity: 10)
+        let inputBuffer = InputWindowBuffer(capacity: 10)
         inputBuffer.push(input1)
         inputBuffer.push(input2)
         inputBuffer.push(input3)
@@ -77,7 +77,7 @@ class StateTests: XCTestCase {
     func testInputBufferAtInt16Wrap() {
         let input1 = Input(sequence: 0, type: 0, nodeId: 1)
         let input2 = Input(sequence: 1, type: 0, nodeId: 1)
-        let inputBuffer = InputBuffer(capacity: 10)
+        let inputBuffer = InputWindowBuffer(capacity: 10)
 
         inputBuffer.push(input1)
         inputBuffer.push(input2)
@@ -88,6 +88,26 @@ class StateTests: XCTestCase {
         XCTAssertEqual([input1, input2], inputBuffer.top(5, at: 4))
     }
 
+    class FakeInputInterpreter: InputInterpreter {
+        var applied = [(UInt8, Int16)]()
+
+        func apply(type: UInt8, id: Int16) {
+            applied.append((type, id))
+        }
+    }
+
+    func testInputReadQueue() {
+        let inputReadQueue = InputReadQueue(capacity: 100)
+        let inputInterpreter = FakeInputInterpreter()
+        let input1 = Input(sequence: 0, type: 0, nodeId: 0)
+        let input2 = Input(sequence: 1, type: 1, nodeId: 1)
+        let input3 = Input(sequence: 2, type: 2, nodeId: 2)
+        XCTAssertEqual(0, inputInterpreter.applied.count)
+        inputReadQueue.apply(inputs: [input1, input2], inputInterpreter: inputInterpreter)
+        XCTAssertEqual(2, inputInterpreter.applied.count)
+        inputReadQueue.apply(inputs: [input1, input2, input3], inputInterpreter: inputInterpreter)
+        XCTAssertEqual(3, inputInterpreter.applied.count)
+    }
 
     func testJitterBuffer() {
         let p1 = Packet(sequence: 0, updates: [], inputs: [])

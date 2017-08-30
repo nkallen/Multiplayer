@@ -90,7 +90,44 @@ class PriorityAccumulator {
 
 // MARK: - InputBuffer
 
-class InputBuffer {
+class InputWriteQueue {
+    var buffer = [(UInt8, Int16)]()
+
+    func push(type: UInt8, id: Int16) {
+        buffer.append((type, id))
+    }
+
+    func write(to inputWindowBuffer: InputWindowBuffer, at sequence: Int16) {
+        for item in buffer {
+            let (type, id) = item
+            let input = Input(sequence: sequence, type: type, nodeId: id)
+            inputWindowBuffer.push(input)
+        }
+        buffer = []
+    }
+}
+
+class InputReadQueue {
+    var buffer: [Input?]
+
+    init(capacity: Int) {
+        assert(capacity >= Packet.maxInputsPerPacket)
+        self.buffer = [Input?](repeating: nil, count: capacity)
+    }
+
+    func apply(inputs: [Input], inputInterpreter: InputInterpreter) {
+        for input in inputs {
+            let index = Int(input.sequence) % buffer.capacity
+            let seen = buffer[index]
+            if seen == nil {
+                inputInterpreter.apply(type: input.type, id: input.nodeId)
+                buffer[index] = input
+            }
+        }
+    }
+}
+
+class InputWindowBuffer {
     var buffer: [Input?]
 
     init(capacity: Int) {
@@ -122,6 +159,14 @@ class InputBuffer {
         }
         return result
     }
+}
+
+protocol InputInterpreter {
+    func apply(type: UInt8, id: Int16)
+}
+
+class NilInputInterpreter: InputInterpreter {
+    func apply(type: UInt8, id: Int16) {}
 }
 
 // MARK: - JitterBuffer

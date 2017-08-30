@@ -136,23 +136,17 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
             }
         case let .sendingAndReceiving(match, _, localStartTime, remoteStartTime):
             let localSequence = self.sequence(at: Date.timeIntervalSinceReferenceDate, from: localStartTime)
-            print("=>", localSequence)
             let packet = localState.packet(at: localSequence)
-//            if count % sendPeriod == 0 {
-//                try! match.sendData(toAllPlayers: packet.data, with: .unreliable)
-//            }
-
-            let data = packet.data
-            let packetD = Packet(dataWrapper: DataWrapper(data))!
-            self.remoteState.jitterBuffer.push(packetD)
+            if count % sendPeriod == 0 {
+                try! match.sendData(toAllPlayers: packet.data, with: .unreliable)
+            }
 
             let remoteSequence = self.sequence(at: Date.timeIntervalSinceReferenceDate, from: remoteStartTime)
-            print("<=", remoteSequence)
-//            DispatchQueue.main.async {
+            DispatchQueue.main.async {
                 if let packet = self.remoteState.jitterBuffer[remoteSequence] {
-                    self.remoteState.apply(packet: packet, to: scene)
+                    self.remoteState.apply(packet: packet, to: scene, with: NilInputInterpreter())
                 }
-//            }
+            }
         }
     }
 
