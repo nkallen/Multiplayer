@@ -115,15 +115,17 @@ class InputReadQueue {
         self.buffer = [Input?](repeating: nil, count: capacity)
     }
 
-    func apply(inputs: [Input], inputInterpreter: InputInterpreter) {
+    func filter(inputs: [Input]) -> [Input] {
+        var result = [Input]()
         for input in inputs {
             let index = Int(input.sequence) % buffer.capacity
             let seen = buffer[index]
             if seen == nil {
-                inputInterpreter.apply(type: input.type, id: input.nodeId)
+                result.append(input)
                 buffer[index] = input
             }
         }
+        return result
     }
 }
 
@@ -162,11 +164,11 @@ class InputWindowBuffer {
 }
 
 protocol InputInterpreter {
-    func apply(type: UInt8, id: Int16)
+    func apply(type: UInt8, id: Int16, from stateSynchronizer: StateSynchronizer)
 }
 
 class NilInputInterpreter: InputInterpreter {
-    func apply(type: UInt8, id: Int16) {}
+    func apply(type: UInt8, id: Int16, from stateSynchronizer: StateSynchronizer) {}
 }
 
 // MARK: - JitterBuffer

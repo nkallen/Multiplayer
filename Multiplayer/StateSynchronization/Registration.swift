@@ -37,12 +37,12 @@ class StateSynchronizer {
             if let node = id2node[state.id] {
                 node.update(to: state, with: referenceNode ?? SCNNode())
             } else {
-                // This is temporary/a hack: if we observe an update to a node that doesn't exist,
-                // create it.
-                let node = createNodeOutOfThinAir(scene: scene)
-                _ = register(node)
-                node.update(to: state, with: referenceNode ?? SCNNode())
+                print("node", state.id, "doesn't exist yet")
             }
+        }
+        let inputs = inputReadQueue.filter(inputs: packet.inputs)
+        for input in inputs {
+            inputInterpreter.apply(type: input.type, id: input.nodeId, from: self)
         }
     }
 

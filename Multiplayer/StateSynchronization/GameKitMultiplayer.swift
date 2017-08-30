@@ -5,6 +5,7 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
     let localState = StateSynchronizer()
     let remoteState = StateSynchronizer()
     let sendPeriod = 1
+    let inputInterpreter: InputInterpreter
 
     enum State {
         case waitingForLogin
@@ -18,6 +19,9 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
 
     // MARK: - GameKit
 
+    init(inputInterpreter: InputInterpreter) {
+        self.inputInterpreter = inputInterpreter
+    }
 
     func login(andThen: @escaping () -> ()) {
         let localPlayer = GKLocalPlayer.localPlayer()
@@ -144,7 +148,7 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
             let remoteSequence = self.sequence(at: Date.timeIntervalSinceReferenceDate, from: remoteStartTime)
             DispatchQueue.main.async {
                 if let packet = self.remoteState.jitterBuffer[remoteSequence] {
-                    self.remoteState.apply(packet: packet, to: scene, with: NilInputInterpreter())
+                    self.remoteState.apply(packet: packet, to: scene, with: self.inputInterpreter)
                 }
             }
         }
