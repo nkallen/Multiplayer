@@ -1,6 +1,8 @@
 import Foundation
 import SceneKit
 
+// MARK: - Nodes
+
 extension SCNNode {
     func update(to state: NodeState, with referenceNode: SCNNode) {
         let position = state.position
@@ -79,5 +81,19 @@ struct FullNodeState: NodeState, Equatable {
             lhs.orientation == rhs.orientation &&
             lhs.linearVelocity == rhs.linearVelocity &&
             lhs.angularVelocity == rhs.angularVelocity
+    }
+}
+
+// MARK: - Input
+
+struct Input: Equatable {
+    let sequence: Int16
+    let type: UInt8
+    let nodeId: Int16
+
+    static func ==(lhs: Input, rhs: Input) -> Bool {
+        return lhs.sequence == rhs.sequence &&
+            lhs.type == rhs.type &&
+            lhs.nodeId == rhs.nodeId
     }
 }

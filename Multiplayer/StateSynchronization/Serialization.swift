@@ -48,18 +48,22 @@ extension Array: DataConvertible {
         }
     }
 }
+
 extension Packet: DataConvertible {
-    static let minimumSizeInBytes = 4
+    static let minimumSizeInBytes = 5
 
     init?(dataWrapper: DataWrapper) {
         guard dataWrapper.count >= Packet.minimumSizeInBytes,
             let sequence = Int16(dataWrapper: dataWrapper),
+            let inputsCount = UInt8(dataWrapper: dataWrapper),
+            let inputs = [Input](dataWrapper: dataWrapper, count: Int(inputsCount)),
             let compactCount = UInt8(dataWrapper: dataWrapper),
             let compactUpdates = [CompactNodeState](dataWrapper: dataWrapper, count: Int(compactCount)),
             let fullCount = UInt8(dataWrapper: dataWrapper),
             let fullUpdates = [FullNodeState](dataWrapper: dataWrapper, count: Int(fullCount)) else { return nil }
 
         self.sequence = sequence
+        self.inputs = inputs
         self.updatesCompact = compactUpdates
         self.updatesFull = fullUpdates
     }
@@ -67,6 +71,8 @@ extension Packet: DataConvertible {
     var data: Data {
         let mutableData = NSMutableData()
         mutableData.append(sequence.data)
+        mutableData.append(UInt8(inputs.count).data)
+        mutableData.append(inputs.data)
         mutableData.append(UInt8(updatesCompact.count).data)
         mutableData.append(updatesCompact.data)
         mutableData.append(UInt8(updatesFull.count).data)
@@ -123,6 +129,29 @@ extension CompactNodeState: DataConvertible {
         mutableData.append(id.data)
         mutableData.append(position.data)
         mutableData.append(orientation.data)
+        return mutableData as Data
+    }
+}
+
+extension Input: DataConvertible {
+    static let sizeInBytes = 5
+
+    init?(dataWrapper: DataWrapper) {
+        guard dataWrapper.count >= Input.sizeInBytes,
+            let sequence = Int16(dataWrapper: dataWrapper),
+            let type = UInt8(dataWrapper: dataWrapper),
+            let nodeId = Int16(dataWrapper: dataWrapper) else { return nil }
+
+        self.sequence = sequence
+        self.type = type
+        self.nodeId = nodeId
+    }
+
+    var data: Data {
+        let mutableData = NSMutableData()
+        mutableData.append(sequence.data)
+        mutableData.append(type.data)
+        mutableData.append(nodeId.data)
         return mutableData as Data
     }
 }

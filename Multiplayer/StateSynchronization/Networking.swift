@@ -12,8 +12,9 @@ struct Packet: Equatable, Comparable {
     let sequence: Int16
     let updatesCompact: [CompactNodeState]
     let updatesFull: [FullNodeState]
+    let inputs: [Input]
 
-    init(sequence: Int16, updates: [NodeState]) {
+    init(sequence: Int16, updates: [NodeState], inputs: [Input]) {
         var updatesCompact = [CompactNodeState]()
         var updatesFull = [FullNodeState]()
         for update in updates {
@@ -28,6 +29,7 @@ struct Packet: Equatable, Comparable {
         self.sequence = sequence
         self.updatesCompact = updatesCompact
         self.updatesFull = updatesFull
+        self.inputs = inputs
     }
 
     var updates: [NodeState] {
@@ -36,7 +38,8 @@ struct Packet: Equatable, Comparable {
 
     static func ==(lhs: Packet, rhs: Packet) -> Bool {
         return lhs.sequence == rhs.sequence &&
-            lhs.updates == rhs.updates
+            lhs.updates == rhs.updates &&
+            lhs.inputs == rhs.inputs
     }
 
     static func <(lhs: Packet, rhs: Packet) -> Bool {
@@ -84,6 +87,43 @@ class PriorityAccumulator {
     }
 }
 
+
+// MARK: - InputBuffer
+
+class InputBuffer {
+    var buffer: [Input?]
+
+    init(capacity: Int) {
+        print(capacity)
+        assert(capacity > 0)
+
+        self.buffer = [Input?](repeating: nil, count: capacity)
+    }
+
+    func push(_ input: Input) {
+        buffer[Int(input.sequence) % buffer.count] = input
+    }
+
+    func top(_ count: Int, at sequence: Int16) -> [Input] {
+        assert(sequence >= 0)
+
+        var result = [Input]()
+        for i in Int(sequence)-count+1...Int(sequence) {
+            let index = i % buffer.count
+            let negativeModulo = index >= 0 ? index : index + buffer.count
+
+            if let input = buffer[negativeModulo] {
+                if input.sequence == i {
+                    result.append(input)
+                } else {
+                    buffer[negativeModulo] = nil
+                }
+            }
+        }
+        return result
+    }
+}
+
 // MARK: - JitterBuffer
 
 /**
@@ -120,3 +160,4 @@ class JitterBuffer {
         return result
     }
 }
+

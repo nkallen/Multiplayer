@@ -14,13 +14,15 @@ class StateSynchronizer {
     let priorityAccumulator = PriorityAccumulator()
     let jitterBuffer = JitterBuffer(capacity: 1024)
     var referenceNode: SCNNode?
+    var inputBuffer = InputBuffer(capacity: 1024)
 
     func packet(at sequence: Int) -> Packet {
-        let sequence = Int16(sequence % Int(Int16.max))
+        let sequenceTruncated = Int16(sequence % Int(Int16.max))
         priorityAccumulator.update(registry: registry)
         let inThisPacket = priorityAccumulator.top(Packet.maxStateUpdatesPerPacket, in: registry)
         let updates = inThisPacket.map { $0.state(with: referenceNode ?? SCNNode()) }
-        return Packet(sequence: sequence, updates: updates)
+        let inputs = inputBuffer.top(Packet.maxInputsPerPacket, at: sequenceTruncated)
+        return Packet(sequence: sequenceTruncated, updates: updates, inputs: inputs)
     }
 
     func apply(packet: Packet, to scene: SCNScene) {
@@ -48,6 +50,10 @@ class StateSynchronizer {
 
         registry.insert(registered)
         return registered
+    }
+
+    func register(_ input: Input) {
+        inputBuffer.push(input)
     }
 
     private func createNodeOutOfThinAir(scene: SCNScene) -> SCNNode {
