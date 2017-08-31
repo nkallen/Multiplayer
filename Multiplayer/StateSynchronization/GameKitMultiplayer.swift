@@ -10,7 +10,7 @@ class GameKitMultiplayer<I: InputInterpreter>: NSObject, GKMatchDelegate {
     enum State {
         case waitingForLogin
         case loggedIn
-        case foundMatch(GKMatch)
+        case foundMatch(GKMatch, andThen: () -> ())
         case sending(GKMatch, host: GKPlayer, localStartTime: TimeInterval)
         case sendingAndReceiving(GKMatch, host: GKPlayer, localStartTime: TimeInterval, remoteStartTime: TimeInterval)
     }
@@ -45,7 +45,7 @@ class GameKitMultiplayer<I: InputInterpreter>: NSObject, GKMatchDelegate {
         }
     }
 
-    func sendMatchRequest(referenceNode: SCNNode) {
+    func sendMatchRequest(referenceNode: SCNNode, andThen: @escaping () -> ()) {
         switch state {
         case .loggedIn:
             self.localState.referenceNode = referenceNode
@@ -55,7 +55,7 @@ class GameKitMultiplayer<I: InputInterpreter>: NSObject, GKMatchDelegate {
             GKMatchmaker.shared().findMatch(for: matchRequest) { (match, error) in
                 if let match = match {
                     print("Found match", match)
-                    self.state = .foundMatch(match)
+                    self.state = .foundMatch(match, andThen: andThen)
                     match.delegate = self
                 } else {
                     print("Error finding match", error as Any)
@@ -63,7 +63,7 @@ class GameKitMultiplayer<I: InputInterpreter>: NSObject, GKMatchDelegate {
             }
 //            self.state = .sendingAndReceiving(GKMatch(), host: GKLocalPlayer.localPlayer(), localStartTime: Date.timeIntervalSinceReferenceDate, remoteStartTime: Date.timeIntervalSinceReferenceDate)
         case .waitingForLogin:
-            login { self.sendMatchRequest(referenceNode: referenceNode) }
+            login { self.sendMatchRequest(referenceNode: referenceNode, andThen: andThen) }
         default: fatalError("Already in match")
         }
     }
@@ -81,7 +81,7 @@ class GameKitMultiplayer<I: InputInterpreter>: NSObject, GKMatchDelegate {
             print("player", player, "disconnected")
         case .stateConnected:
             switch self.state {
-            case let .foundMatch(match_):
+            case let .foundMatch(match_, andThen: andThen):
                 print("player connected:", player)
                 if match.expectedPlayerCount == 0 { // Enough players have joined the match, let's play!
                     // Deterministically choose a host. Don't use `chooseBestHostingPlayer` because it
@@ -92,6 +92,7 @@ class GameKitMultiplayer<I: InputInterpreter>: NSObject, GKMatchDelegate {
                     let host = playersSorted.first!
                     DispatchQueue.main.async {
                         self.state = .sending(match_, host: host, localStartTime: Date.timeIntervalSinceReferenceDate)
+                        andThen()
                     }
                     //                match.chooseBestHostingPlayer { best in
                     //                    if let player = best {

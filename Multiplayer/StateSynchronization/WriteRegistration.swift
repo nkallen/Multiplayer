@@ -21,8 +21,11 @@ class ReadStateSynchronizer<I: InputInterpreter>: ReadRegistrar {
 
     func apply(packet: Packet, to scene: SCNScene, with inputInterpreter: I) {
         let inputs = inputReadQueue.filter(inputs: packet.inputs)
+        print(packet.inputs)
+        print("inputs ->", packet.inputs.count, inputs.count)
         for input in inputs {
-            inputInterpreter.apply(data: input.underlying, with: self)
+            print("received input", input)
+            inputInterpreter.apply(datas: input.underlying, with: self)
         }
         for state in packet.updates {
             if let node = id2node[state.id] {
@@ -34,6 +37,7 @@ class ReadStateSynchronizer<I: InputInterpreter>: ReadRegistrar {
     }
 
     func register(_ node: SCNNode, id: UInt16) {
+        print("registering ", node, id)
         if node2registered[node] != nil { fatalError("already registered") }
 
         let registered = ReadRegistration(id: id, value: node)
@@ -45,6 +49,8 @@ class ReadStateSynchronizer<I: InputInterpreter>: ReadRegistrar {
 }
 
 class WriteStateSynchronizer {
+    let serialQueue = DispatchQueue(label: "WriteStateSynchronizer")
+
     var registry = Set<WriteRegistration>()
     var node2registered = [SCNNode:WriteRegistration]()
     var id2node = [UInt16:SCNNode]()
@@ -55,38 +61,44 @@ class WriteStateSynchronizer {
     let inputWriteQueue = InputWriteQueue()
 
     func packet(at sequence: Int) -> Packet {
-        let sequenceTruncated = UInt16(sequence % Int(UInt16.max))
+        return serialQueue.sync {
+            let sequenceTruncated = UInt16(sequence % Int(UInt16.max))
 
-        priorityAccumulator.update(registry: registry)
-        let inThisPacket = priorityAccumulator.top(Packet.maxStateUpdatesPerPacket, in: registry)
-        let updates = inThisPacket.map { $0.state(with: referenceNode ?? SCNNode()) }
+            priorityAccumulator.update(registry: registry)
+            let inThisPacket = priorityAccumulator.top(Packet.maxStateUpdatesPerPacket, in: registry)
+            let updates = inThisPacket.map { $0.state(with: referenceNode ?? SCNNode()) }
 
-        inputWriteQueue.write(to: inputWindowBuffer, at: sequenceTruncated)
-        let inputs = inputWindowBuffer.top(Packet.maxInputsPerPacket, at: sequenceTruncated)
-        return Packet(sequence: sequenceTruncated, updates: updates, inputs: inputs)
-    }
-
-    func input(_ dataConvertible: DataConvertible) {
-        inputWriteQueue.push(dataConvertible.data)
-    }
-
-    func register(_ node: SCNNode, priority: Float) -> WriteRegistration {
-        return register(node) { () in
-            return priority
+            inputWriteQueue.write(to: inputWindowBuffer, at: sequenceTruncated)
+            let inputs = inputWindowBuffer.top(Packet.maxInputsPerPacket, at: sequenceTruncated)
+            print("sending inputs", inputs)
+            return Packet(sequence: sequenceTruncated, updates: updates, inputs: inputs)
         }
     }
 
-    func register(_ node: SCNNode, priorityCallback: @escaping () -> Float) -> WriteRegistration {
-        if let registered = node2registered[node] { return registered }
+    func input(_ dataConvertible: DataConvertible) {
 
-        counter += 1
-        assert(counter < .max)
-        let registered = WriteRegistration(id: counter, value: node, priorityCallback: priorityCallback)
-        node2registered[node] = registered
-        id2node[counter] = node
+        inputWriteQueue.push(dataConvertible.data)
+    }
+    
+    func register(_ node: SCNNode, priority: Float, registrationCallback: @escaping (WriteRegistration) -> ()) {
+        register(node, priorityCallback: { () in
+            return priority
+        }, registrationCallback: registrationCallback)
+    }
 
-        registry.insert(registered)
-        return registered
+    func register(_ node: SCNNode, priorityCallback: @escaping () -> Float, registrationCallback: @escaping (WriteRegistration) -> ()) {
+        serialQueue.async {
+            if self.node2registered[node] != nil { return }
+
+            self.counter += 1
+            assert(self.counter < .max)
+            let registered = WriteRegistration(id: self.counter, value: node, priorityCallback: priorityCallback)
+            self.node2registered[node] = registered
+            self.id2node[self.counter] = node
+
+            registrationCallback(registered)
+            self.registry.insert(registered)
+        }
     }
 }
 

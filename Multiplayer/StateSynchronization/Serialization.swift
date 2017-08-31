@@ -139,18 +139,26 @@ extension Input: DataConvertible {
     init(dataWrapper: DataWrapper) {
         guard dataWrapper.count >= Input.minimumSizeInBytes else { fatalError("Invalid number of bytes") }
         let sequence = UInt16(dataWrapper: dataWrapper)
-        let count = UInt8(dataWrapper: dataWrapper)
-        let data = dataWrapper.read(Int(count))
+        let inputCount = UInt8(dataWrapper: dataWrapper)
+        var datas = [Data]()
+        for _ in 0..<inputCount {
+            let count = UInt8(dataWrapper: dataWrapper)
+            let data = dataWrapper.read(Int(count))
+            datas.append(data)
+        }
 
         self.sequence = sequence
-        self.underlying = data
+        self.underlying = datas
     }
 
     var data: Data {
         let mutableData = NSMutableData()
         mutableData.append(sequence.data)
         mutableData.append(UInt8(underlying.count).data)
-        mutableData.append(underlying)
+        for datum in underlying {
+            mutableData.append(UInt8(datum.count).data)
+            mutableData.append(datum)
+        }
         return mutableData as Data
     }
 }

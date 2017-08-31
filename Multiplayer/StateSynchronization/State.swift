@@ -85,17 +85,13 @@ struct FullNodeState: NodeState, Equatable {
 
 // MARK: - Input
 
-struct Input: Equatable, Hashable {
+struct Input: Equatable {
     let sequence: UInt16
-    let underlying: Data
+    let underlying: [Data]
 
     static func ==(lhs: Input, rhs: Input) -> Bool {
         return lhs.sequence == rhs.sequence &&
             lhs.underlying == rhs.underlying
-    }
-
-    var hashValue: Int {
-        return Int(sequence)
     }
 }
 
@@ -107,9 +103,11 @@ protocol InputInterpreter {
 }
 
 extension InputInterpreter {
-    func apply(data: Data, with registrar: ReadRegistrar) {
-        let t = T.init(dataWrapper: DataWrapper(data))
-        apply(input: t, with: registrar)
+    func apply(datas: [Data], with registrar: ReadRegistrar) {
+        for data in datas {
+            let t = T.init(dataWrapper: DataWrapper(data))
+            apply(input: t, with: registrar)
+        }
     }
 }
 

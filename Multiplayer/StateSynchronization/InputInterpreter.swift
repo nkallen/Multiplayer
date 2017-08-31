@@ -4,6 +4,7 @@ import SceneKit
 enum InputCommand {
     case pointOfView(id: UInt16)
     case toss(id: UInt16)
+    case voxel(id: UInt16, color: UIColor)
 }
 
 extension InputCommand: DataConvertible {
@@ -19,6 +20,13 @@ extension InputCommand: DataConvertible {
         case 1:
             let id = UInt16(dataWrapper: dataWrapper)
             self = .toss(id: id)
+        case 2:
+            let id = UInt16(dataWrapper: dataWrapper)
+            let red = UInt8(dataWrapper: dataWrapper)
+            let green = UInt8(dataWrapper: dataWrapper)
+            let blue = UInt8(dataWrapper: dataWrapper)
+            self = .voxel(id: id, color: UIColor(red: CGFloat(red) / 255, green: CGFloat(green) / 255, blue: CGFloat(blue) / 255, alpha: 1))
+            print("got voxel with id", id)
         default:
             fatalError("invalid type")
         }
@@ -33,6 +41,18 @@ extension InputCommand: DataConvertible {
         case let .toss(id: id):
             mutableData.append(UInt8(1).data)
             mutableData.append(id.data)
+        case let .voxel(id: id, color: color):
+            print("serializing voxel with id", id)
+            mutableData.append(UInt8(2).data)
+            mutableData.append(id.data)
+            var red: CGFloat = 0
+            var green: CGFloat = 0
+            var blue: CGFloat = 0
+            var alpha: CGFloat = 0
+            color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+            mutableData.append(UInt8(red * 255).data)
+            mutableData.append(UInt8(green * 255).data)
+            mutableData.append(UInt8(blue * 255).data)
         }
         return mutableData as Data
     }
@@ -52,11 +72,15 @@ class MyInputInterpreter: InputInterpreter {
             let node = createAxesNode(quiverLength: 0.1, quiverThickness: 1.0)
             //        let fire = SCNScene(named: "scene.scn", inDirectory: "Models.scnassets/Fire")!.rootNode.childNodes.first!
             scene.rootNode.addChildNode(node)
-            _ = registrar.register(node, id: id)
+            registrar.register(node, id: id)
         case let .toss(id: id):
             let node = Ball()
             scene.rootNode.addChildNode(node)
-            _ = registrar.register(node, id: id)
+            registrar.register(node, id: id)
+        case let .voxel(id: id, color: color):
+            let node = Voxel.node(color: color)
+            scene.rootNode.addChildNode(node)
+            registrar.register(node, id: id)
         }
     }
 

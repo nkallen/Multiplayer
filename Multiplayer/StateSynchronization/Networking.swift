@@ -80,18 +80,24 @@ class PriorityAccumulator {
 // MARK: - InputBuffer
 
 class InputWriteQueue {
+    let serialQueue = DispatchQueue(label: "InputWriteQueue")
+
     var buffer = [Data]()
 
     func push(_ data: Data) {
-        buffer.append(data)
+        serialQueue.sync {
+            buffer.append(data)
+        }
     }
 
     func write(to inputWindowBuffer: InputWindowBuffer, at sequence: UInt16) {
-        for data in buffer {
-            let input = Input(sequence: sequence, underlying: data)
-            inputWindowBuffer.push(input)
+        serialQueue.sync {
+            if buffer.count > 0 {
+                let input = Input(sequence: sequence, underlying: buffer)
+                inputWindowBuffer.push(input)
+                buffer = []
+            }
         }
-        buffer = []
     }
 }
 
@@ -121,7 +127,6 @@ class InputWindowBuffer {
     var buffer: [Input?]
 
     init(capacity: Int) {
-        print(capacity)
         assert(capacity > 0)
 
         self.buffer = [Input?](repeating: nil, count: capacity)
