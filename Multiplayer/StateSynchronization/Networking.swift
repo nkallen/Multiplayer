@@ -154,10 +154,12 @@ class InputWindowBuffer {
 
 protocol InputInterpreter {
     func apply(type: UInt8, id: UInt16, from stateSynchronizer: StateSynchronizer)
+    func nodeMissing(with state: NodeState)
 }
 
 class NilInputInterpreter: InputInterpreter {
     func apply(type: UInt8, id: UInt16, from stateSynchronizer: StateSynchronizer) {}
+    func nodeMissing(with state: NodeState) {}
 }
 
 // MARK: - JitterBuffer

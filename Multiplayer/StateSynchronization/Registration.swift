@@ -29,14 +29,11 @@ class StateSynchronizer {
 
         inputWriteQueue.write(to: inputWindowBuffer, at: sequenceTruncated)
         let inputs = inputWindowBuffer.top(Packet.maxInputsPerPacket, at: sequenceTruncated)
-        print("writing packet with", updates.count, inputs.count)
         return Packet(sequence: sequenceTruncated, updates: updates, inputs: inputs)
     }
 
     func apply(packet: Packet, to scene: SCNScene, with inputInterpreter: InputInterpreter) {
-        print("reading packet with", packet.updates.count, packet.inputs.count)
         let inputs = inputReadQueue.filter(inputs: packet.inputs)
-        print("after filtration", inputs.count)
         for input in inputs {
             inputInterpreter.apply(type: input.type, id: input.nodeId, from: self)
         }
@@ -44,7 +41,7 @@ class StateSynchronizer {
             if let node = id2node[state.id] {
                 node.update(to: state, with: referenceNode ?? SCNNode())
             } else {
-                print("node", state.id, "doesn't exist yet")
+                inputInterpreter.nodeMissing(with: state)
             }
         }
     }
