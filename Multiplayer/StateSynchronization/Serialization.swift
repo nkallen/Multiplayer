@@ -134,24 +134,23 @@ extension CompactNodeState: DataConvertible {
 }
 
 extension Input: DataConvertible {
-    static let sizeInBytes = 5
+    static let minimumSizeInBytes = 3
 
     init(dataWrapper: DataWrapper) {
-        guard dataWrapper.count >= Input.sizeInBytes else { fatalError("Invalid number of bytes") }
+        guard dataWrapper.count >= Input.minimumSizeInBytes else { fatalError("Invalid number of bytes") }
         let sequence = UInt16(dataWrapper: dataWrapper)
-        let type = UInt8(dataWrapper: dataWrapper)
-        let nodeId = UInt16(dataWrapper: dataWrapper)
+        let count = UInt8(dataWrapper: dataWrapper)
+        let data = dataWrapper.read(Int(count))
 
         self.sequence = sequence
-        self.type = type
-        self.nodeId = nodeId
+        self.underlying = data
     }
 
     var data: Data {
         let mutableData = NSMutableData()
         mutableData.append(sequence.data)
-        mutableData.append(type.data)
-        mutableData.append(nodeId.data)
+        mutableData.append(UInt8(underlying.count).data)
+        mutableData.append(underlying)
         return mutableData as Data
     }
 }

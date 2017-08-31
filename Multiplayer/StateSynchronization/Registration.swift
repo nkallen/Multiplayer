@@ -47,7 +47,7 @@ class ReadStateSynchronizer: StateSynchronizer {
     func apply(packet: Packet, to scene: SCNScene, with inputInterpreter: InputInterpreter) {
         let inputs = inputReadQueue.filter(inputs: packet.inputs)
         for input in inputs {
-            inputInterpreter.apply(type: input.type, id: input.nodeId, from: self)
+            inputInterpreter.apply(input: input.underlying, from: self)
         }
         for state in packet.updates {
             if let node = id2node[state.id] {
@@ -74,8 +74,8 @@ class WriteStateSynchronizer: StateSynchronizer {
         return Packet(sequence: sequenceTruncated, updates: updates, inputs: inputs)
     }
 
-    func event(type: UInt8, id: UInt16) {
-        inputWriteQueue.push(type: type, id: id)
+    func input(_ dataConvertible: DataConvertible) {
+        inputWriteQueue.push(dataConvertible.data)
     }
 }
 

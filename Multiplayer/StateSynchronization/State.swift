@@ -87,16 +87,24 @@ struct FullNodeState: NodeState, Equatable {
 
 struct Input: Equatable, Hashable {
     let sequence: UInt16
-    let type: UInt8
-    let nodeId: UInt16
+    let underlying: Data
 
     static func ==(lhs: Input, rhs: Input) -> Bool {
         return lhs.sequence == rhs.sequence &&
-            lhs.type == rhs.type &&
-            lhs.nodeId == rhs.nodeId
+            lhs.underlying == rhs.underlying
     }
 
     var hashValue: Int {
         return Int(sequence)
     }
+}
+
+protocol InputInterpreter {
+    func apply(input: Data, from stateSynchronizer: StateSynchronizer)
+    func nodeMissing(with state: NodeState)
+}
+
+class NilInputInterpreter: InputInterpreter {
+    func apply(input: Data, from stateSynchronizer: StateSynchronizer) {}
+    func nodeMissing(with state: NodeState) {}
 }
