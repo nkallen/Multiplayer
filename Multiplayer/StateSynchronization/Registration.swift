@@ -6,31 +6,43 @@ import SceneKit
  * and a state.
  */
 
-// sep ReadStateSync from WriteStateSync
-
 class StateSynchronizer {
     var registry = Set<Registered>()
     var node2registered = [SCNNode:Registered]()
     var id2node = [UInt16:SCNNode]()
     var counter: UInt16 = 0
     let priorityAccumulator = PriorityAccumulator()
-    let jitterBuffer = JitterBuffer(capacity: 1024)
     var referenceNode: SCNNode?
     var inputWindowBuffer = InputWindowBuffer(capacity: 1024)
-    let inputWriteQueue = InputWriteQueue()
-    let inputReadQueue = InputReadQueue(capacity: Packet.maxInputsPerPacket)
 
-    func packet(at sequence: Int) -> Packet {
-        let sequenceTruncated = UInt16(sequence % Int(UInt16.max))
-
-        priorityAccumulator.update(registry: registry)
-        let inThisPacket = priorityAccumulator.top(Packet.maxStateUpdatesPerPacket, in: registry)
-        let updates = inThisPacket.map { $0.state(with: referenceNode ?? SCNNode()) }
-
-        inputWriteQueue.write(to: inputWindowBuffer, at: sequenceTruncated)
-        let inputs = inputWindowBuffer.top(Packet.maxInputsPerPacket, at: sequenceTruncated)
-        return Packet(sequence: sequenceTruncated, updates: updates, inputs: inputs)
+    func register(_ node: SCNNode) -> Registered {
+        return register(node, priority: 0)
     }
+
+    func register(_ node: SCNNode, priority: Float) -> Registered {
+        return register(node) { () in
+            return priority
+        }
+    }
+
+    func register(_ node: SCNNode, priorityCallback: @escaping () -> Float) -> Registered {
+        if let registered = node2registered[node] { return registered }
+
+        counter += 1
+        assert(counter < .max)
+        let registered = Registered(id: counter, value: node, priorityCallback: priorityCallback)
+        node2registered[node] = registered
+        id2node[counter] = node
+
+        registry.insert(registered)
+        return registered
+    }
+
+}
+
+class ReadStateSynchronizer: StateSynchronizer {
+    let inputReadQueue = InputReadQueue(capacity: Packet.maxInputsPerPacket)
+    let jitterBuffer = JitterBuffer(capacity: 1024)
 
     func apply(packet: Packet, to scene: SCNScene, with inputInterpreter: InputInterpreter) {
         let inputs = inputReadQueue.filter(inputs: packet.inputs)
@@ -45,36 +57,25 @@ class StateSynchronizer {
             }
         }
     }
+}
 
-    func register(_ node: SCNNode, priority: Float) -> Registered {
-        return register(node) { () in
-            return priority
-        }
-    }
+class WriteStateSynchronizer: StateSynchronizer {
+    let inputWriteQueue = InputWriteQueue()
 
-    func register(_ node: SCNNode, priorityCallback: @escaping () -> Float) -> Registered {
-        if let registered = node2registered[node] { return registered }
+    func packet(at sequence: Int) -> Packet {
+        let sequenceTruncated = UInt16(sequence % Int(UInt16.max))
 
-        counter += 1
-        print("registering with counter", counter)
-        assert(counter < .max)
-        let registered = Registered(id: counter, value: node, priorityCallback: priorityCallback)
-        node2registered[node] = registered
-        id2node[counter] = node
+        priorityAccumulator.update(registry: registry)
+        let inThisPacket = priorityAccumulator.top(Packet.maxStateUpdatesPerPacket, in: registry)
+        let updates = inThisPacket.map { $0.state(with: referenceNode ?? SCNNode()) }
 
-        registry.insert(registered)
-        return registered
+        inputWriteQueue.write(to: inputWindowBuffer, at: sequenceTruncated)
+        let inputs = inputWindowBuffer.top(Packet.maxInputsPerPacket, at: sequenceTruncated)
+        return Packet(sequence: sequenceTruncated, updates: updates, inputs: inputs)
     }
 
     func event(type: UInt8, id: UInt16) {
         inputWriteQueue.push(type: type, id: id)
-    }
-
-    private func createNodeOutOfThinAir(scene: SCNScene) -> SCNNode {
-        let node = createAxesNode(quiverLength: 0.1, quiverThickness: 1.0)
-//        let fire = SCNScene(named: "scene.scn", inDirectory: "Models.scnassets/Fire")!.rootNode.childNodes.first!
-        scene.rootNode.addChildNode(node)
-        return node
     }
 }
 
@@ -99,7 +100,6 @@ struct Registered: Hashable, Equatable {
         let transform = referenceNode.simdConvertTransform(value.presentation.simdWorldTransform, from: nil)
         let position = float3(transform.columns.3.x, transform.columns.3.y, transform.columns.3.z)
         let orientation = simd_quaternion(transform).vector
-//        print("in state:", value.presentation.simdWorldPosition, value.presentation.simdWorldOrientation)
 
         if let physicsBody = value.physicsBody {
             if !physicsBody.isResting &&
