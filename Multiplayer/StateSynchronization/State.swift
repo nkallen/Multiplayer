@@ -11,7 +11,6 @@ extension SCNNode {
         transform.columns.3 = float4(position.x, position.y, position.z, 1)
 
         simdWorldTransform = referenceNode.simdWorldTransform * transform
-//        print("in update:", simdWorldPosition, simdWorldOrientation)
 
         if let physicsBody = physicsBody {
             physicsBody.velocity = SCNVector3(state.linearVelocity)
@@ -22,7 +21,7 @@ extension SCNNode {
 }
 
 protocol NodeState: DataConvertible {
-    var id: Int16 { get }
+    var id: UInt16 { get }
     var position: float3 { get }
     var orientation: float4 { get }
     var linearVelocity: float3 { get }
@@ -53,7 +52,7 @@ func ==(lhs: [NodeState], rhs: [NodeState]) -> Bool {
 }
 
 struct CompactNodeState: NodeState, Equatable {
-    let id: Int16
+    let id: UInt16
     let position: float3
     let orientation: float4
     var linearVelocity: float3 { return float3(0,0,0) }
@@ -69,11 +68,11 @@ struct CompactNodeState: NodeState, Equatable {
 }
 
 struct FullNodeState: NodeState, Equatable {
-    let id: Int16 // 2
-    let position: float3 // 4 *3
-    let orientation: float4 // 4*4
-    let linearVelocity: float3 // 4*3
-    let angularVelocity: float4 // 4*4
+    let id: UInt16
+    let position: float3
+    let orientation: float4
+    let linearVelocity: float3
+    let angularVelocity: float4
 
     static func ==(lhs: FullNodeState, rhs: FullNodeState) -> Bool {
         return lhs.id == rhs.id &&
@@ -87,9 +86,9 @@ struct FullNodeState: NodeState, Equatable {
 // MARK: - Input
 
 struct Input: Equatable, Hashable {
-    let sequence: Int16
+    let sequence: UInt16
     let type: UInt8
-    let nodeId: Int16
+    let nodeId: UInt16
 
     static func ==(lhs: Input, rhs: Input) -> Bool {
         return lhs.sequence == rhs.sequence &&

@@ -2,7 +2,7 @@ import Foundation
 import SceneKit
 
 /**
- * Extremely compact binary representation of objects, suitable for frequent network transmission.
+ * Compact binary representation of objects, suitable for frequent network transmission.
  */
 
 protocol DataConvertible {
@@ -24,7 +24,7 @@ extension DataConvertible {
 }
 
 extension UInt8: DataConvertible {}
-extension Int16: DataConvertible {}
+extension UInt16: DataConvertible {}
 extension Int: DataConvertible {}
 extension Float: DataConvertible {}
 extension Double: DataConvertible {}
@@ -54,22 +54,13 @@ extension Packet: DataConvertible {
 
     init(dataWrapper: DataWrapper) {
         guard dataWrapper.count >= Packet.minimumSizeInBytes else { fatalError("bad min size") }
-        let sequence = Int16(dataWrapper: dataWrapper)
+        let sequence = UInt16(dataWrapper: dataWrapper)
         let inputsCount = UInt8(dataWrapper: dataWrapper)
         let inputs = [Input](dataWrapper: dataWrapper, count: Int(inputsCount))
         let compactCount = UInt8(dataWrapper: dataWrapper)
         let compactUpdates = [CompactNodeState](dataWrapper: dataWrapper, count: Int(compactCount))
         let fullCount = UInt8(dataWrapper: dataWrapper)
         let fullUpdates = [FullNodeState](dataWrapper: dataWrapper, count: Int(fullCount))
-
-//        guard dataWrapper.count >= Packet.minimumSizeInBytes,
-//            let sequence = Int16(dataWrapper: dataWrapper),
-//            let inputsCount = UInt8(dataWrapper: dataWrapper),
-//            let inputs = [Input](dataWrapper: dataWrapper, count: Int(inputsCount)),
-//            let compactCount = UInt8(dataWrapper: dataWrapper),
-//            let compactUpdates = [CompactNodeState](dataWrapper: dataWrapper, count: Int(compactCount)),
-//            let fullCount = UInt8(dataWrapper: dataWrapper),
-//            let fullUpdates = [FullNodeState](dataWrapper: dataWrapper, count: Int(fullCount)) else { return nil }
 
         self.sequence = sequence
         self.inputs = inputs
@@ -95,7 +86,7 @@ extension FullNodeState: DataConvertible {
 
     init(dataWrapper: DataWrapper) {
         guard dataWrapper.count >= FullNodeState.sizeInBytes else { fatalError("invalid number of bytes" )}
-        let id = Int16(dataWrapper: dataWrapper)
+        let id = UInt16(dataWrapper: dataWrapper)
         let position = float3(dataWrapper: dataWrapper)
         let orientation = float4(dataWrapper: dataWrapper)
         let linearVelocity = float3(dataWrapper: dataWrapper)
@@ -124,7 +115,7 @@ extension CompactNodeState: DataConvertible {
 
     init(dataWrapper: DataWrapper) {
         guard dataWrapper.count >= CompactNodeState.sizeInBytes else { fatalError("Invalid number of bytes") }
-        let id = Int16(dataWrapper: dataWrapper)
+        let id = UInt16(dataWrapper: dataWrapper)
         let position = float3(dataWrapper: dataWrapper)
         let orientation = float4(dataWrapper: dataWrapper)
 
@@ -147,9 +138,9 @@ extension Input: DataConvertible {
 
     init(dataWrapper: DataWrapper) {
         guard dataWrapper.count >= Input.sizeInBytes else { fatalError("Invalid number of bytes") }
-        let sequence = Int16(dataWrapper: dataWrapper)
+        let sequence = UInt16(dataWrapper: dataWrapper)
         let type = UInt8(dataWrapper: dataWrapper)
-        let nodeId = Int16(dataWrapper: dataWrapper)
+        let nodeId = UInt16(dataWrapper: dataWrapper)
 
         self.sequence = sequence
         self.type = type

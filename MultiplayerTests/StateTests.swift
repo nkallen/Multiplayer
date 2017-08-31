@@ -75,7 +75,7 @@ class StateTests: XCTestCase {
         XCTAssertEqual([], inputBuffer.top(5, at: 11))
     }
 
-    func testInputBufferAtInt16Wrap() {
+    func testInputBufferAtUInt16Wrap() {
         let input1 = Input(sequence: 0, type: 0, nodeId: 1)
         let input2 = Input(sequence: 1, type: 0, nodeId: 1)
         let inputBuffer = InputWindowBuffer(capacity: 10)
@@ -98,7 +98,7 @@ class StateTests: XCTestCase {
         XCTAssertEqual([input3], inputReadQueue.filter(inputs: [input1, input2, input3]))
 
         for i in 3...Packet.maxInputsPerPacket {
-            let input = Input(sequence: Int16(i), type: 0, nodeId: 0)
+            let input = Input(sequence: UInt16(Int16(i)), type: 0, nodeId: 0)
             XCTAssertEqual([input], inputReadQueue.filter(inputs: [input]))
         }
     }

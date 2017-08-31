@@ -6,13 +6,13 @@ import SceneKit
  * and a state.
  */
 
-// TODO FIXME: Int16 -> UInt16; sep ReadStateSync from WriteStateSync
+// sep ReadStateSync from WriteStateSync
 
 class StateSynchronizer {
     var registry = Set<Registered>()
     var node2registered = [SCNNode:Registered]()
-    var id2node = [Int16:SCNNode]()
-    var counter: Int16 = 0
+    var id2node = [UInt16:SCNNode]()
+    var counter: UInt16 = 0
     let priorityAccumulator = PriorityAccumulator()
     let jitterBuffer = JitterBuffer(capacity: 1024)
     var referenceNode: SCNNode?
@@ -21,7 +21,7 @@ class StateSynchronizer {
     let inputReadQueue = InputReadQueue(capacity: Packet.maxInputsPerPacket)
 
     func packet(at sequence: Int) -> Packet {
-        let sequenceTruncated = Int16(sequence % Int(Int16.max))
+        let sequenceTruncated = UInt16(sequence % Int(UInt16.max))
 
         priorityAccumulator.update(registry: registry)
         let inThisPacket = priorityAccumulator.top(Packet.maxStateUpdatesPerPacket, in: registry)
@@ -69,7 +69,7 @@ class StateSynchronizer {
         return registered
     }
 
-    func event(type: UInt8, id: Int16) {
+    func event(type: UInt8, id: UInt16) {
         inputWriteQueue.push(type: type, id: id)
     }
 
@@ -82,7 +82,7 @@ class StateSynchronizer {
 }
 
 struct Registered: Hashable, Equatable {
-    let id: Int16
+    let id: UInt16
     let value: SCNNode
     let priorityCallback: () -> Float
 

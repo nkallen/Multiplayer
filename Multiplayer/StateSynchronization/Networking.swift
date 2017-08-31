@@ -2,19 +2,19 @@ import Foundation
 
 /**
  * A packet is a collection of state updates with a sequence id. We fake a "monotonically"
- * increasing clock using Int16s to save bits. Wrapping happens infrequently.
+ * increasing clock using UInt16s to save bits. Wrapping happens infrequently.
  */
 
 struct Packet: Equatable, Comparable {
     static let maxInputsPerPacket = 24
     static let maxStateUpdatesPerPacket = 24
 
-    let sequence: Int16
+    let sequence: UInt16
     let updatesCompact: [CompactNodeState]
     let updatesFull: [FullNodeState]
     let inputs: [Input]
 
-    init(sequence: Int16, updates: [NodeState], inputs: [Input]) {
+    init(sequence: UInt16, updates: [NodeState], inputs: [Input]) {
         var updatesCompact = [CompactNodeState]()
         var updatesFull = [FullNodeState]()
         for update in updates {
@@ -50,7 +50,7 @@ struct Packet: Equatable, Comparable {
 // Mark: - PriorityAccumulator
 
 class PriorityAccumulator {
-    var priorities = [Float](repeating: 0, count: Int(Int16.max))
+    var priorities = [Float](repeating: 0, count: Int(UInt16.max))
 
     func update(registry: Set<Registered>) {
         for registered in registry {
@@ -80,13 +80,13 @@ class PriorityAccumulator {
 // MARK: - InputBuffer
 
 class InputWriteQueue {
-    var buffer = [(UInt8, Int16)]()
+    var buffer = [(UInt8, UInt16)]()
 
-    func push(type: UInt8, id: Int16) {
+    func push(type: UInt8, id: UInt16) {
         buffer.append((type, id))
     }
 
-    func write(to inputWindowBuffer: InputWindowBuffer, at sequence: Int16) {
+    func write(to inputWindowBuffer: InputWindowBuffer, at sequence: UInt16) {
         for item in buffer {
             let (type, id) = item
             let input = Input(sequence: sequence, type: type, nodeId: id)
@@ -132,7 +132,7 @@ class InputWindowBuffer {
         buffer[Int(input.sequence) % buffer.count] = input
     }
 
-    func top(_ count: Int, at sequence: Int16) -> [Input] {
+    func top(_ count: Int, at sequence: UInt16) -> [Input] {
         assert(sequence >= 0)
 
         var result = [Input]()
@@ -153,11 +153,11 @@ class InputWindowBuffer {
 }
 
 protocol InputInterpreter {
-    func apply(type: UInt8, id: Int16, from stateSynchronizer: StateSynchronizer)
+    func apply(type: UInt8, id: UInt16, from stateSynchronizer: StateSynchronizer)
 }
 
 class NilInputInterpreter: InputInterpreter {
-    func apply(type: UInt8, id: Int16, from stateSynchronizer: StateSynchronizer) {}
+    func apply(type: UInt8, id: UInt16, from stateSynchronizer: StateSynchronizer) {}
 }
 
 // MARK: - JitterBuffer
@@ -171,7 +171,7 @@ class JitterBuffer {
     var buffer: [Packet?]
     let minDelay: Int
 
-    var lastReceived: Int16 = -1
+    var lastReceived: UInt16 = 0
     var count = 0
 
     init(capacity: Int, minDelay: Int = 5) {
