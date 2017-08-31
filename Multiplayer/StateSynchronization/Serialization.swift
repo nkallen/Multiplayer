@@ -6,13 +6,13 @@ import SceneKit
  */
 
 protocol DataConvertible {
-    init?(dataWrapper: DataWrapper)
+    init(dataWrapper: DataWrapper)
     var data: Data { get }
 }
 
 extension DataConvertible {
-    init?(dataWrapper: DataWrapper) {
-        guard dataWrapper.count >= MemoryLayout<Self>.size else { return nil }
+    init(dataWrapper: DataWrapper) {
+        guard dataWrapper.count >= MemoryLayout<Self>.size else { fatalError("invalid number of bytes") }
         let data = dataWrapper.read(MemoryLayout<Self>.size)
         self = data.withUnsafeBytes { $0.pointee }
     }
@@ -31,20 +31,20 @@ extension Double: DataConvertible {}
 extension float3: DataConvertible {}
 extension float4: DataConvertible {}
 
-extension Array: DataConvertible {
+extension Array where Iterator.Element: DataConvertible {
     var data: Data {
-        var values = self
-        return Data(buffer: UnsafeBufferPointer(start: &values, count: count))
+        let data = NSMutableData()
+        for item in self {
+            data.append(item.data)
+        }
+        return data as Data
     }
 
-    init?(dataWrapper: DataWrapper, count: Int) {
-        guard dataWrapper.count >= MemoryLayout<Iterator.Element>.stride * count else { return nil }
-        self.init(data: dataWrapper.read(MemoryLayout<Iterator.Element>.stride * count))
-    }
-
-    init?(data: Data) {
-        self = data.withUnsafeBytes {
-            [Iterator.Element](UnsafeBufferPointer(start: $0, count: data.count/MemoryLayout<Iterator.Element>.stride))
+    init(dataWrapper: DataWrapper, count: Int) {
+        self = [Iterator.Element]()
+        for _ in 0..<count {
+            let item = Iterator.Element.self.init(dataWrapper: dataWrapper)
+            self.append(item)
         }
     }
 }
@@ -52,15 +52,24 @@ extension Array: DataConvertible {
 extension Packet: DataConvertible {
     static let minimumSizeInBytes = 5
 
-    init?(dataWrapper: DataWrapper) {
-        guard dataWrapper.count >= Packet.minimumSizeInBytes,
-            let sequence = Int16(dataWrapper: dataWrapper),
-            let inputsCount = UInt8(dataWrapper: dataWrapper),
-            let inputs = [Input](dataWrapper: dataWrapper, count: Int(inputsCount)),
-            let compactCount = UInt8(dataWrapper: dataWrapper),
-            let compactUpdates = [CompactNodeState](dataWrapper: dataWrapper, count: Int(compactCount)),
-            let fullCount = UInt8(dataWrapper: dataWrapper),
-            let fullUpdates = [FullNodeState](dataWrapper: dataWrapper, count: Int(fullCount)) else { return nil }
+    init(dataWrapper: DataWrapper) {
+        guard dataWrapper.count >= Packet.minimumSizeInBytes else { fatalError("bad min size") }
+        let sequence = Int16(dataWrapper: dataWrapper)
+        let inputsCount = UInt8(dataWrapper: dataWrapper)
+        let inputs = [Input](dataWrapper: dataWrapper, count: Int(inputsCount))
+        let compactCount = UInt8(dataWrapper: dataWrapper)
+        let compactUpdates = [CompactNodeState](dataWrapper: dataWrapper, count: Int(compactCount))
+        let fullCount = UInt8(dataWrapper: dataWrapper)
+        let fullUpdates = [FullNodeState](dataWrapper: dataWrapper, count: Int(fullCount))
+
+//        guard dataWrapper.count >= Packet.minimumSizeInBytes,
+//            let sequence = Int16(dataWrapper: dataWrapper),
+//            let inputsCount = UInt8(dataWrapper: dataWrapper),
+//            let inputs = [Input](dataWrapper: dataWrapper, count: Int(inputsCount)),
+//            let compactCount = UInt8(dataWrapper: dataWrapper),
+//            let compactUpdates = [CompactNodeState](dataWrapper: dataWrapper, count: Int(compactCount)),
+//            let fullCount = UInt8(dataWrapper: dataWrapper),
+//            let fullUpdates = [FullNodeState](dataWrapper: dataWrapper, count: Int(fullCount)) else { return nil }
 
         self.sequence = sequence
         self.inputs = inputs
@@ -84,13 +93,13 @@ extension Packet: DataConvertible {
 extension FullNodeState: DataConvertible {
     static let sizeInBytes = 66
 
-    init?(dataWrapper: DataWrapper) {
-        guard dataWrapper.count == FullNodeState.sizeInBytes,
-            let id = Int16(dataWrapper: dataWrapper),
-            let position = float3(dataWrapper: dataWrapper),
-            let orientation = float4(dataWrapper: dataWrapper),
-            let linearVelocity = float3(dataWrapper: dataWrapper),
-            let angularVelocity = float4(dataWrapper: dataWrapper) else { return nil }
+    init(dataWrapper: DataWrapper) {
+        guard dataWrapper.count >= FullNodeState.sizeInBytes else { fatalError("invalid number of bytes" )}
+        let id = Int16(dataWrapper: dataWrapper)
+        let position = float3(dataWrapper: dataWrapper)
+        let orientation = float4(dataWrapper: dataWrapper)
+        let linearVelocity = float3(dataWrapper: dataWrapper)
+        let angularVelocity = float4(dataWrapper: dataWrapper)
 
         self.id = id
         self.position = position
@@ -113,11 +122,11 @@ extension FullNodeState: DataConvertible {
 extension CompactNodeState: DataConvertible {
     static let sizeInBytes = 34
 
-    init?(dataWrapper: DataWrapper) {
-        guard dataWrapper.count >= CompactNodeState.sizeInBytes,
-            let id = Int16(dataWrapper: dataWrapper),
-            let position = float3(dataWrapper: dataWrapper),
-            let orientation = float4(dataWrapper: dataWrapper) else { return nil }
+    init(dataWrapper: DataWrapper) {
+        guard dataWrapper.count >= CompactNodeState.sizeInBytes else { fatalError("Invalid number of bytes") }
+        let id = Int16(dataWrapper: dataWrapper)
+        let position = float3(dataWrapper: dataWrapper)
+        let orientation = float4(dataWrapper: dataWrapper)
 
         self.id = id
         self.position = position
@@ -136,11 +145,11 @@ extension CompactNodeState: DataConvertible {
 extension Input: DataConvertible {
     static let sizeInBytes = 5
 
-    init?(dataWrapper: DataWrapper) {
-        guard dataWrapper.count >= Input.sizeInBytes,
-            let sequence = Int16(dataWrapper: dataWrapper),
-            let type = UInt8(dataWrapper: dataWrapper),
-            let nodeId = Int16(dataWrapper: dataWrapper) else { return nil }
+    init(dataWrapper: DataWrapper) {
+        guard dataWrapper.count >= Input.sizeInBytes else { fatalError("Invalid number of bytes") }
+        let sequence = Int16(dataWrapper: dataWrapper)
+        let type = UInt8(dataWrapper: dataWrapper)
+        let nodeId = Int16(dataWrapper: dataWrapper)
 
         self.sequence = sequence
         self.type = type

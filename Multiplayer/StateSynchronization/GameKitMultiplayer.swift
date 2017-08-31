@@ -58,7 +58,7 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
                     self.state = .foundMatch(match)
                     match.delegate = self
                 } else {
-                    print("Error finding match", error)
+                    print("Error finding match", error as Any)
                 }
             }
 //            self.state = .sendingAndReceiving(GKMatch(), host: GKLocalPlayer.localPlayer(), localStartTime: Date.timeIntervalSinceReferenceDate, remoteStartTime: Date.timeIntervalSinceReferenceDate)
@@ -69,7 +69,7 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
     }
 
     func match(_ match: GKMatch, didFailWithError error: Error?) {
-        print("Match failure", error)
+        print("Match failure", error as Any)
     }
 
     func match(_ match: GKMatch, player: GKPlayer, didChange state: GKPlayerConnectionState) {
@@ -149,6 +149,8 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
             DispatchQueue.main.async {
                 if let packet = self.remoteState.jitterBuffer[remoteSequence] {
                     self.remoteState.apply(packet: packet, to: scene, with: self.inputInterpreter)
+                } else {
+                    print("missing packet", remoteSequence)
                 }
             }
         }
@@ -158,16 +160,14 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
         DispatchQueue.main.async {
             switch self.state {
             case .sendingAndReceiving(_, _, _, _):
-                if let packet = Packet(dataWrapper: DataWrapper(data)) {
-                    self.remoteState.jitterBuffer.push(packet)
-                }
+                let packet = Packet(dataWrapper: DataWrapper(data))
+                self.remoteState.jitterBuffer.push(packet)
             case let .sending(match, host, localStartTime):
                 let remoteStartTime = Date.timeIntervalSinceReferenceDate
                 DispatchQueue.main.async {
                     self.state = .sendingAndReceiving(match, host: host, localStartTime: localStartTime, remoteStartTime: remoteStartTime)
-                    if let packet = Packet(dataWrapper: DataWrapper(data)) {
-                        self.remoteState.jitterBuffer.push(packet)
-                    }
+                    let packet = Packet(dataWrapper: DataWrapper(data))
+                    self.remoteState.jitterBuffer.push(packet)
                 }
             default:
                 fatalError("Invalid state to receive data")

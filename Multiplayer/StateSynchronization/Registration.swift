@@ -29,10 +29,17 @@ class StateSynchronizer {
 
         inputWriteQueue.write(to: inputWindowBuffer, at: sequenceTruncated)
         let inputs = inputWindowBuffer.top(Packet.maxInputsPerPacket, at: sequenceTruncated)
+        print("writing packet with", updates.count, inputs.count)
         return Packet(sequence: sequenceTruncated, updates: updates, inputs: inputs)
     }
 
     func apply(packet: Packet, to scene: SCNScene, with inputInterpreter: InputInterpreter) {
+        print("reading packet with", packet.updates.count, packet.inputs.count)
+        let inputs = inputReadQueue.filter(inputs: packet.inputs)
+        print("after filtration", inputs.count)
+        for input in inputs {
+            inputInterpreter.apply(type: input.type, id: input.nodeId, from: self)
+        }
         for state in packet.updates {
             if let node = id2node[state.id] {
                 node.update(to: state, with: referenceNode ?? SCNNode())
@@ -40,18 +47,21 @@ class StateSynchronizer {
                 print("node", state.id, "doesn't exist yet")
             }
         }
-        let inputs = inputReadQueue.filter(inputs: packet.inputs)
-        for input in inputs {
-            inputInterpreter.apply(type: input.type, id: input.nodeId, from: self)
+    }
+
+    func register(_ node: SCNNode, priority: Float) -> Registered {
+        return register(node) { () in
+            return priority
         }
     }
 
-    func register(_ node: SCNNode) -> Registered {
+    func register(_ node: SCNNode, priorityCallback: @escaping () -> Float) -> Registered {
         if let registered = node2registered[node] { return registered }
 
         counter += 1
+        print("registering with counter", counter)
         assert(counter < .max)
-        let registered = Registered(id: counter, value: node)
+        let registered = Registered(id: counter, value: node, priorityCallback: priorityCallback)
         node2registered[node] = registered
         id2node[counter] = node
 
@@ -74,9 +84,14 @@ class StateSynchronizer {
 struct Registered: Hashable, Equatable {
     let id: Int16
     let value: SCNNode
+    let priorityCallback: () -> Float
 
     var hashValue: Int {
         return Int(id)
+    }
+
+    var priority: Float {
+        return priorityCallback()
     }
 
     static func ==(lhs: Registered, rhs: Registered) -> Bool {

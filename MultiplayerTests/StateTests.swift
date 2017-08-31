@@ -12,7 +12,7 @@ class StateTests: XCTestCase {
         let nodeState = CompactNodeState(id: 1, position: position, orientation: orientation)
 
         let data = nodeState.data
-        let deserialized = CompactNodeState(dataWrapper: DataWrapper(data))!
+        let deserialized = CompactNodeState(dataWrapper: DataWrapper(data))
         XCTAssertEqual(nodeState, deserialized)
     }
 
@@ -20,7 +20,7 @@ class StateTests: XCTestCase {
         let nodeState = FullNodeState(id: 1, position: position, orientation: orientation, linearVelocity: linearVelocity, angularVelocity: angularVelocity)
 
         let data = nodeState.data
-        let deserialized = FullNodeState(dataWrapper: DataWrapper(data))!
+        let deserialized = FullNodeState(dataWrapper: DataWrapper(data))
         XCTAssertEqual(nodeState, deserialized)
     }
 
@@ -32,16 +32,17 @@ class StateTests: XCTestCase {
         let updates: [NodeState] = [nodeState1, nodeState2]
         let packet = Packet(sequence: 5, updates: updates, inputs: [])
         let data = packet.data
+        print(packet.data)
         let deserialized = Packet(dataWrapper: DataWrapper(data))
         XCTAssertEqual(packet, deserialized)
     }
 
     func testPriorityAccumulator() {
         let stateSynchronizer = StateSynchronizer()
-        let node1 = AdHocPriorityNode(priority: 1)
-        let node2 = AdHocPriorityNode(priority: 1.1)
-        let registered1 = stateSynchronizer.register(node1)
-        let registered2 = stateSynchronizer.register(node2)
+        let node1 = SCNNode()
+        let node2 = SCNNode()
+        let registered1 = stateSynchronizer.register(node1, priority: 1)
+        let registered2 = stateSynchronizer.register(node2, priority: 1.1)
         let priorityAccumulator = PriorityAccumulator()
         priorityAccumulator.update(registry: stateSynchronizer.registry)
         XCTAssertEqual([registered2], priorityAccumulator.top(1, in: stateSynchronizer.registry))
@@ -89,12 +90,17 @@ class StateTests: XCTestCase {
     }
 
     func testInputReadQueue() {
-        let inputReadQueue = InputReadQueue(capacity: 100)
+        let inputReadQueue = InputReadQueue(capacity: Packet.maxInputsPerPacket)
         let input1 = Input(sequence: 0, type: 0, nodeId: 0)
         let input2 = Input(sequence: 1, type: 1, nodeId: 1)
         let input3 = Input(sequence: 2, type: 2, nodeId: 2)
         XCTAssertEqual([input1, input2], inputReadQueue.filter(inputs: [input1, input2]))
         XCTAssertEqual([input3], inputReadQueue.filter(inputs: [input1, input2, input3]))
+
+        for i in 3...Packet.maxInputsPerPacket {
+            let input = Input(sequence: Int16(i), type: 0, nodeId: 0)
+            XCTAssertEqual([input], inputReadQueue.filter(inputs: [input]))
+        }
     }
 
     func testJitterBuffer() {
@@ -115,18 +121,5 @@ class StateTests: XCTestCase {
         XCTAssertEqual(p2, jitterBuffer[4])
         jitterBuffer.push(p4)
         XCTAssertEqual(p3, jitterBuffer[5])
-    }
-}
-
-class AdHocPriorityNode: SCNNode, HasPriority {
-    let intrinsicPriority: Float
-
-    init(priority: Float) {
-        self.intrinsicPriority = priority
-        super.init()
-    }
-
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
     }
 }

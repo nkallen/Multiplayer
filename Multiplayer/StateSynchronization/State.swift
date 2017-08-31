@@ -69,11 +69,11 @@ struct CompactNodeState: NodeState, Equatable {
 }
 
 struct FullNodeState: NodeState, Equatable {
-    let id: Int16
-    let position: float3
-    let orientation: float4
-    let linearVelocity: float3
-    let angularVelocity: float4
+    let id: Int16 // 2
+    let position: float3 // 4 *3
+    let orientation: float4 // 4*4
+    let linearVelocity: float3 // 4*3
+    let angularVelocity: float4 // 4*4
 
     static func ==(lhs: FullNodeState, rhs: FullNodeState) -> Bool {
         return lhs.id == rhs.id &&

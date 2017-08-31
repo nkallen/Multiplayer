@@ -6,8 +6,8 @@ import Foundation
  */
 
 struct Packet: Equatable, Comparable {
-    static let maxInputsPerPacket = 32
-    static let maxStateUpdatesPerPacket = 64
+    static let maxInputsPerPacket = 24
+    static let maxStateUpdatesPerPacket = 24
 
     let sequence: Int16
     let updatesCompact: [CompactNodeState]
@@ -49,25 +49,13 @@ struct Packet: Equatable, Comparable {
 
 // Mark: - PriorityAccumulator
 
-/**
- * Since we probably can't send every object state in every packet, each object has a priority
- * associated with it. It increases every time the clock increments `update()`. Objects also
- * have an `intrinsicPriority` which allows certain objects to accumulate priority more quickly.
- */
-
-protocol HasPriority {
-    var intrinsicPriority: Float { get }
-}
-
 class PriorityAccumulator {
     var priorities = [Float](repeating: 0, count: Int(Int16.max))
 
     func update(registry: Set<Registered>) {
         for registered in registry {
-            if let prioritized = registered.value as? HasPriority {
-                let id = registered.id
-                priorities[Int(id)] = priorities[Int(id)] + prioritized.intrinsicPriority
-            }
+            let id = registered.id
+            priorities[Int(id)] = priorities[Int(id)] + registered.priority
         }
     }
 
@@ -83,6 +71,7 @@ class PriorityAccumulator {
             priorities[Int(id)] = 0
             result.append(registered)
         }
+        print("sending", result.map { $0.id })
         return result
     }
 }
@@ -119,8 +108,8 @@ class InputReadQueue {
         var result = [Input]()
         for input in inputs {
             let index = Int(input.sequence) % buffer.capacity
-            let seen = buffer[index]
-            if seen == nil {
+            if let seen = buffer[index], seen.sequence == input.sequence {
+            } else {
                 result.append(input)
                 buffer[index] = input
             }
