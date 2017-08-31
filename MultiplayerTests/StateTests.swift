@@ -38,7 +38,7 @@ class StateTests: XCTestCase {
     }
 
     func testPriorityAccumulator() {
-        let stateSynchronizer = StateSynchronizer()
+        let stateSynchronizer = WriteStateSynchronizer()
         let node1 = SCNNode()
         let node2 = SCNNode()
         let registered1 = stateSynchronizer.register(node1, priority: 1)
@@ -53,11 +53,11 @@ class StateTests: XCTestCase {
     }
 
     func testInputBuffer() {
-        let input1 = Input(sequence: 0, type: 0, nodeId: 1)
-        let input2 = Input(sequence: 1, type: 0, nodeId: 1)
-        let input3 = Input(sequence: 2, type: 1, nodeId: 1)
-        let input4 = Input(sequence: 3, type: 1, nodeId: 2)
-        let input5 = Input(sequence: 4, type: 1, nodeId: 3)
+        let input1 = Input(sequence: 0, underlying: Data())
+        let input2 = Input(sequence: 1, underlying: Data())
+        let input3 = Input(sequence: 2, underlying: Data())
+        let input4 = Input(sequence: 3, underlying: Data())
+        let input5 = Input(sequence: 4, underlying: Data())
         let inputBuffer = InputWindowBuffer(capacity: 10)
         inputBuffer.push(input1)
         inputBuffer.push(input2)
@@ -76,8 +76,8 @@ class StateTests: XCTestCase {
     }
 
     func testInputBufferAtUInt16Wrap() {
-        let input1 = Input(sequence: 0, type: 0, nodeId: 1)
-        let input2 = Input(sequence: 1, type: 0, nodeId: 1)
+        let input1 = Input(sequence: 0, underlying: Data())
+        let input2 = Input(sequence: 1, underlying: Data())
         let inputBuffer = InputWindowBuffer(capacity: 10)
 
         inputBuffer.push(input1)
@@ -91,14 +91,14 @@ class StateTests: XCTestCase {
 
     func testInputReadQueue() {
         let inputReadQueue = InputReadQueue(capacity: Packet.maxInputsPerPacket)
-        let input1 = Input(sequence: 0, type: 0, nodeId: 0)
-        let input2 = Input(sequence: 1, type: 1, nodeId: 1)
-        let input3 = Input(sequence: 2, type: 2, nodeId: 2)
+        let input1 = Input(sequence: 0, underlying: Data())
+        let input2 = Input(sequence: 1, underlying: Data())
+        let input3 = Input(sequence: 2, underlying: Data())
         XCTAssertEqual([input1, input2], inputReadQueue.filter(inputs: [input1, input2]))
         XCTAssertEqual([input3], inputReadQueue.filter(inputs: [input1, input2, input3]))
 
         for i in 3...Packet.maxInputsPerPacket {
-            let input = Input(sequence: UInt16(Int16(i)), type: 0, nodeId: 0)
+            let input = Input(sequence: UInt16(Int16(i)), underlying: Data())
             XCTAssertEqual([input], inputReadQueue.filter(inputs: [input]))
         }
     }
