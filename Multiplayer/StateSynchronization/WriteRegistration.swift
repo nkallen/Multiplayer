@@ -6,48 +6,23 @@ import SceneKit
  * and a state.
  */
 
-class StateSynchronizer {
-    var registry = Set<Registered>()
-    var node2registered = [SCNNode:Registered]()
-    var id2node = [UInt16:SCNNode]()
-    var counter: UInt16 = 0
-    let priorityAccumulator = PriorityAccumulator()
-    var referenceNode: SCNNode?
-    var inputWindowBuffer = InputWindowBuffer(capacity: 1024)
-
-    func register(_ node: SCNNode) -> Registered {
-        return register(node, priority: 0)
-    }
-
-    func register(_ node: SCNNode, priority: Float) -> Registered {
-        return register(node) { () in
-            return priority
-        }
-    }
-
-    func register(_ node: SCNNode, priorityCallback: @escaping () -> Float) -> Registered {
-        if let registered = node2registered[node] { return registered }
-
-        counter += 1
-        assert(counter < .max)
-        let registered = Registered(id: counter, value: node, priorityCallback: priorityCallback)
-        node2registered[node] = registered
-        id2node[counter] = node
-
-        registry.insert(registered)
-        return registered
-    }
-
+protocol ReadRegistrar {
+    func register(_ node: SCNNode, id: UInt16)
 }
 
-class ReadStateSynchronizer<I: InputInterpreter>: StateSynchronizer {
+class ReadStateSynchronizer<I: InputInterpreter>: ReadRegistrar {
+    var registry = Set<ReadRegistration>()
+    var node2registered = [SCNNode:ReadRegistration]()
+    var id2node = [UInt16:SCNNode]()
+    var referenceNode: SCNNode?
+    var inputWindowBuffer = InputWindowBuffer(capacity: 1024)
     let inputReadQueue = InputReadQueue(capacity: Packet.maxInputsPerPacket)
     let jitterBuffer = JitterBuffer(capacity: 1024)
 
     func apply(packet: Packet, to scene: SCNScene, with inputInterpreter: I) {
         let inputs = inputReadQueue.filter(inputs: packet.inputs)
         for input in inputs {
-            inputInterpreter.apply(data: input.underlying, from: self)
+            inputInterpreter.apply(data: input.underlying, with: self)
         }
         for state in packet.updates {
             if let node = id2node[state.id] {
@@ -57,9 +32,26 @@ class ReadStateSynchronizer<I: InputInterpreter>: StateSynchronizer {
             }
         }
     }
+
+    func register(_ node: SCNNode, id: UInt16) {
+        if node2registered[node] != nil { fatalError("already registered") }
+
+        let registered = ReadRegistration(id: id, value: node)
+        node2registered[node] = registered
+        id2node[id] = node
+
+        registry.insert(registered)
+    }
 }
 
-class WriteStateSynchronizer: StateSynchronizer {
+class WriteStateSynchronizer {
+    var registry = Set<WriteRegistration>()
+    var node2registered = [SCNNode:WriteRegistration]()
+    var id2node = [UInt16:SCNNode]()
+    var counter: UInt16 = 0
+    let priorityAccumulator = PriorityAccumulator()
+    var referenceNode: SCNNode?
+    var inputWindowBuffer = InputWindowBuffer(capacity: 1024)
     let inputWriteQueue = InputWriteQueue()
 
     func packet(at sequence: Int) -> Packet {
@@ -77,9 +69,28 @@ class WriteStateSynchronizer: StateSynchronizer {
     func input(_ dataConvertible: DataConvertible) {
         inputWriteQueue.push(dataConvertible.data)
     }
+
+    func register(_ node: SCNNode, priority: Float) -> WriteRegistration {
+        return register(node) { () in
+            return priority
+        }
+    }
+
+    func register(_ node: SCNNode, priorityCallback: @escaping () -> Float) -> WriteRegistration {
+        if let registered = node2registered[node] { return registered }
+
+        counter += 1
+        assert(counter < .max)
+        let registered = WriteRegistration(id: counter, value: node, priorityCallback: priorityCallback)
+        node2registered[node] = registered
+        id2node[counter] = node
+
+        registry.insert(registered)
+        return registered
+    }
 }
 
-struct Registered: Hashable, Equatable {
+struct WriteRegistration: Hashable, Equatable {
     let id: UInt16
     let value: SCNNode
     let priorityCallback: () -> Float
@@ -92,7 +103,7 @@ struct Registered: Hashable, Equatable {
         return priorityCallback()
     }
 
-    static func ==(lhs: Registered, rhs: Registered) -> Bool {
+    static func ==(lhs: WriteRegistration, rhs: WriteRegistration) -> Bool {
         return lhs.id == rhs.id
     }
 
@@ -113,3 +124,15 @@ struct Registered: Hashable, Equatable {
     }
 }
 
+struct ReadRegistration: Hashable, Equatable {
+    let id: UInt16
+    let value: SCNNode
+
+    var hashValue: Int {
+        return Int(id)
+    }
+
+    static func ==(lhs: ReadRegistration, rhs: ReadRegistration) -> Bool {
+        return lhs.id == rhs.id
+    }
+}

@@ -46,17 +46,17 @@ class MyInputInterpreter: InputInterpreter {
         self.scene = scene
     }
 
-    func apply(input: InputCommand, from remote: StateSynchronizer) {
+    func apply(input: InputCommand, with registrar: ReadRegistrar) {
         switch input {
         case let .pointOfView(id: id):
             let node = createAxesNode(quiverLength: 0.1, quiverThickness: 1.0)
             //        let fire = SCNScene(named: "scene.scn", inDirectory: "Models.scnassets/Fire")!.rootNode.childNodes.first!
             scene.rootNode.addChildNode(node)
-            _ = remote.register(node, priority: 1)
+            _ = registrar.register(node, id: id)
         case let .toss(id: id):
             let node = Ball()
             scene.rootNode.addChildNode(node)
-            _ = remote.register(node, priority: 1)
+            _ = registrar.register(node, id: id)
         }
     }
 

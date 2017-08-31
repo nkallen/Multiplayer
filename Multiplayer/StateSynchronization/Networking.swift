@@ -52,20 +52,20 @@ struct Packet: Equatable, Comparable {
 class PriorityAccumulator {
     var priorities = [Float](repeating: 0, count: Int(UInt16.max))
 
-    func update(registry: Set<Registered>) {
+    func update(registry: Set<WriteRegistration>) {
         for registered in registry {
             let id = registered.id
             priorities[Int(id)] = priorities[Int(id)] + registered.priority
         }
     }
 
-    func top(_ count: Int, in registry: Set<Registered>) -> [Registered] {
+    func top(_ count: Int, in registry: Set<WriteRegistration>) -> [WriteRegistration] {
         let sorted = registry.sorted { (item1, item2) -> Bool in
             let id1 = item1.id
             let id2 = item2.id
             return priorities[Int(id1)] > priorities[Int(id2)]
         }
-        var result = [Registered]()
+        var result = [WriteRegistration]()
         for registered in sorted[0..<min(count, sorted.count)] {
             let id = registered.id
             priorities[Int(id)] = 0
