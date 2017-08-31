@@ -100,11 +100,22 @@ struct Input: Equatable, Hashable {
 }
 
 protocol InputInterpreter {
-    func apply(input: Data, from stateSynchronizer: StateSynchronizer)
+    associatedtype T: DataConvertible
+
+    func apply(input: T, from stateSynchronizer: StateSynchronizer)
     func nodeMissing(with state: NodeState)
 }
 
+extension InputInterpreter {
+    func apply(data: Data, from remote: StateSynchronizer) {
+        let t = T.init(dataWrapper: DataWrapper(data))
+        apply(input: t, from: remote)
+    }
+}
+
 class NilInputInterpreter: InputInterpreter {
-    func apply(input: Data, from stateSynchronizer: StateSynchronizer) {}
+    typealias T = UInt8
+
+    func apply(input: T, from stateSynchronizer: StateSynchronizer) {}
     func nodeMissing(with state: NodeState) {}
 }

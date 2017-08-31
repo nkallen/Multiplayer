@@ -1,11 +1,11 @@
 import Foundation
 import GameKit
 
-class GameKitMultiplayer: NSObject, GKMatchDelegate {
+class GameKitMultiplayer<I: InputInterpreter>: NSObject, GKMatchDelegate {
     let localState = WriteStateSynchronizer()
-    let remoteState = ReadStateSynchronizer()
+    let remoteState = ReadStateSynchronizer<I>()
     let sendPeriod = 1
-    let inputInterpreter: InputInterpreter
+    let inputInterpreter: I
 
     enum State {
         case waitingForLogin
@@ -19,7 +19,7 @@ class GameKitMultiplayer: NSObject, GKMatchDelegate {
 
     // MARK: - GameKit
 
-    init(inputInterpreter: InputInterpreter) {
+    init(inputInterpreter: I) {
         self.inputInterpreter = inputInterpreter
     }
 

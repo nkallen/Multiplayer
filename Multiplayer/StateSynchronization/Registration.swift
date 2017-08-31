@@ -40,14 +40,14 @@ class StateSynchronizer {
 
 }
 
-class ReadStateSynchronizer: StateSynchronizer {
+class ReadStateSynchronizer<I: InputInterpreter>: StateSynchronizer {
     let inputReadQueue = InputReadQueue(capacity: Packet.maxInputsPerPacket)
     let jitterBuffer = JitterBuffer(capacity: 1024)
 
-    func apply(packet: Packet, to scene: SCNScene, with inputInterpreter: InputInterpreter) {
+    func apply(packet: Packet, to scene: SCNScene, with inputInterpreter: I) {
         let inputs = inputReadQueue.filter(inputs: packet.inputs)
         for input in inputs {
-            inputInterpreter.apply(input: input.underlying, from: self)
+            inputInterpreter.apply(data: input.underlying, from: self)
         }
         for state in packet.updates {
             if let node = id2node[state.id] {

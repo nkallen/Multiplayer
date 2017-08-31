@@ -39,29 +39,30 @@ extension InputCommand: DataConvertible {
 }
 
 class MyInputInterpreter: InputInterpreter {
+    typealias T = InputCommand
     let scene: SCNScene
 
     init(scene: SCNScene) {
         self.scene = scene
     }
 
-    func apply(input: Data, from remote: StateSynchronizer) {
-//        switch type {
-//        case 0:
-//            let node = createAxesNode(quiverLength: 0.1, quiverThickness: 1.0)
-//            //        let fire = SCNScene(named: "scene.scn", inDirectory: "Models.scnassets/Fire")!.rootNode.childNodes.first!
-//            scene.rootNode.addChildNode(node)
-//            _ = remote.register(node, priority: 1)
-//        case 1:
-//            let node = Ball()
-//            scene.rootNode.addChildNode(node)
-//            _ = remote.register(node, priority: 1)
-//        default:
-//            fatalError("Invalid type")
-//        }
+    func apply(input: InputCommand, from remote: StateSynchronizer) {
+        switch input {
+        case let .pointOfView(id: id):
+            let node = createAxesNode(quiverLength: 0.1, quiverThickness: 1.0)
+            //        let fire = SCNScene(named: "scene.scn", inDirectory: "Models.scnassets/Fire")!.rootNode.childNodes.first!
+            scene.rootNode.addChildNode(node)
+            _ = remote.register(node, priority: 1)
+        case let .toss(id: id):
+            let node = Ball()
+            scene.rootNode.addChildNode(node)
+            _ = remote.register(node, priority: 1)
+        }
     }
 
     func nodeMissing(with state: NodeState) {
         fatalError("missing node \(state)")
     }
 }
+
+
