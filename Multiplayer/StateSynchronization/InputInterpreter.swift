@@ -2,9 +2,10 @@ import Foundation
 import SceneKit
 
 enum InputCommand {
-    case pointOfView(id: UInt16)
+    case create(id: UInt16)
     case toss(id: UInt16)
     case voxel(id: UInt16, color: UIColor)
+    case sphere(id: UInt16)
 }
 
 extension InputCommand: DataConvertible {
@@ -26,6 +27,9 @@ extension InputCommand: DataConvertible {
             let green = UInt8(dataWrapper: dataWrapper)
             let blue = UInt8(dataWrapper: dataWrapper)
             self = .voxel(id: id, color: UIColor(red: CGFloat(red) / 255, green: CGFloat(green) / 255, blue: CGFloat(blue) / 255, alpha: 1))
+        case 3:
+            let id = UInt16(dataWrapper: dataWrapper)
+            self = .sphere(id: id)
         default:
             fatalError("invalid type")
         }
@@ -51,6 +55,9 @@ extension InputCommand: DataConvertible {
             mutableData.append(UInt8(red * 255).data)
             mutableData.append(UInt8(green * 255).data)
             mutableData.append(UInt8(blue * 255).data)
+        case let .sphere(id: id):
+            mutableData.append(UInt8(1).data)
+            mutableData.append(id.data)
         }
         return mutableData as Data
     }
@@ -77,6 +84,10 @@ class MyInputInterpreter: InputInterpreter {
             registrar.register(node, id: id)
         case let .voxel(id: id, color: color):
             let node = Voxel.node(color: color)
+            scene.rootNode.addChildNode(node)
+            registrar.register(node, id: id)
+        case let .sphere(id: id):
+            let node = Sphere()
             scene.rootNode.addChildNode(node)
             registrar.register(node, id: id)
         }
