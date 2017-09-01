@@ -2,7 +2,7 @@ import Foundation
 import SceneKit
 
 enum InputCommand {
-    case create(id: UInt16)
+    case pointOfView(id: UInt16)
     case toss(id: UInt16)
     case voxel(id: UInt16, color: UIColor)
     case sphere(id: UInt16)
