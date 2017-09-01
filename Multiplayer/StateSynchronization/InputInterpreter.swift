@@ -26,7 +26,6 @@ extension InputCommand: DataConvertible {
             let green = UInt8(dataWrapper: dataWrapper)
             let blue = UInt8(dataWrapper: dataWrapper)
             self = .voxel(id: id, color: UIColor(red: CGFloat(red) / 255, green: CGFloat(green) / 255, blue: CGFloat(blue) / 255, alpha: 1))
-            print("got voxel with id", id)
         default:
             fatalError("invalid type")
         }
@@ -42,7 +41,6 @@ extension InputCommand: DataConvertible {
             mutableData.append(UInt8(1).data)
             mutableData.append(id.data)
         case let .voxel(id: id, color: color):
-            print("serializing voxel with id", id)
             mutableData.append(UInt8(2).data)
             mutableData.append(id.data)
             var red: CGFloat = 0

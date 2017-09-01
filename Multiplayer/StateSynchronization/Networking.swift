@@ -71,7 +71,6 @@ class PriorityAccumulator {
             priorities[Int(id)] = 0
             result.append(registered)
         }
-        print("sending", result.map { $0.id })
         return result
     }
 }

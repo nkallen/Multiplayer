@@ -21,10 +21,7 @@ class ReadStateSynchronizer<I: InputInterpreter>: ReadRegistrar {
 
     func apply(packet: Packet, to scene: SCNScene, with inputInterpreter: I) {
         let inputs = inputReadQueue.filter(inputs: packet.inputs)
-        print(packet.inputs)
-        print("inputs ->", packet.inputs.count, inputs.count)
         for input in inputs {
-            print("received input", input)
             inputInterpreter.apply(datas: input.underlying, with: self)
         }
         for state in packet.updates {
@@ -37,7 +34,6 @@ class ReadStateSynchronizer<I: InputInterpreter>: ReadRegistrar {
     }
 
     func register(_ node: SCNNode, id: UInt16) {
-        print("registering ", node, id)
         if node2registered[node] != nil { fatalError("already registered") }
 
         let registered = ReadRegistration(id: id, value: node)
@@ -70,7 +66,6 @@ class WriteStateSynchronizer {
 
             inputWriteQueue.write(to: inputWindowBuffer, at: sequenceTruncated)
             let inputs = inputWindowBuffer.top(Packet.maxInputsPerPacket, at: sequenceTruncated)
-            print("sending inputs", inputs)
             return Packet(sequence: sequenceTruncated, updates: updates, inputs: inputs)
         }
     }
