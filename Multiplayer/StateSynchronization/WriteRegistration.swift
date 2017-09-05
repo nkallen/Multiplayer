@@ -44,7 +44,7 @@ class ReadStateSynchronizer<I: InputInterpreter>: ReadRegistrar {
     }
 }
 
-class WriteStateSynchronizer {
+class WriteStateSynchronizer<I: InputInterpreter> {
     let serialQueue = DispatchQueue(label: "WriteStateSynchronizer")
 
     var registry = Set<WriteRegistration>()
@@ -70,7 +70,7 @@ class WriteStateSynchronizer {
         }
     }
 
-    func input(_ dataConvertible: DataConvertible) {
+    func input(_ dataConvertible: I.T) {
 
         inputWriteQueue.push(dataConvertible.data)
     }

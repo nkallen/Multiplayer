@@ -2,7 +2,7 @@ import Foundation
 import GameKit
 
 class GameKitMultiplayer<I: InputInterpreter>: NSObject, GKMatchDelegate {
-    let localState = WriteStateSynchronizer()
+    let localState = WriteStateSynchronizer<I>()
     let remoteState = ReadStateSynchronizer<I>()
     let sendPeriod = 1
     let inputInterpreter: I

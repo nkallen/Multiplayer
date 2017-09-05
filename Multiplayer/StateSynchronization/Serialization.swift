@@ -10,7 +10,9 @@ protocol DataConvertible {
     var data: Data { get }
 }
 
-extension DataConvertible {
+protocol SimpleDataConvertible: DataConvertible {}
+
+extension SimpleDataConvertible {
     init(dataWrapper: DataWrapper) {
         guard dataWrapper.count >= MemoryLayout<Self>.size else { fatalError("invalid number of bytes") }
         let data = dataWrapper.read(MemoryLayout<Self>.size)
@@ -23,13 +25,13 @@ extension DataConvertible {
     }
 }
 
-extension UInt8: DataConvertible {}
-extension UInt16: DataConvertible {}
-extension Int: DataConvertible {}
-extension Float: DataConvertible {}
-extension Double: DataConvertible {}
-extension float3: DataConvertible {}
-extension float4: DataConvertible {}
+extension UInt8: SimpleDataConvertible {}
+extension UInt16: SimpleDataConvertible {}
+extension Int: SimpleDataConvertible {}
+extension Float: SimpleDataConvertible {}
+extension Double: SimpleDataConvertible {}
+extension float3: SimpleDataConvertible {}
+extension float4: SimpleDataConvertible {}
 
 extension Array where Iterator.Element: DataConvertible {
     var data: Data {
@@ -133,6 +135,35 @@ extension CompactNodeState: DataConvertible {
     }
 }
 
+@objc extension UIColor {
+    static let sizeInBytes = 4
+
+    convenience init(dataWrapper: DataWrapper) {
+        let red = UInt8(dataWrapper: dataWrapper)
+        let green = UInt8(dataWrapper: dataWrapper)
+        let blue = UInt8(dataWrapper: dataWrapper)
+        let alpha = UInt8(dataWrapper: dataWrapper)
+        self.init(red: CGFloat(red) / 255, green: CGFloat(green) / 255, blue: CGFloat(blue) / 255, alpha: CGFloat(alpha) / 255)
+    }
+
+    convenience init(dataWrapper: DataWrapper, r: Double, g: Double , b: Double , alpha: Double) {
+        self.init(red: CGFloat(r), green: CGFloat(g), blue: CGFloat(b), alpha: CGFloat(alpha))
+    }
+
+    var data: Data {
+        let mutableData = NSMutableData()
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        mutableData.append(UInt8(red * 255).data)
+        mutableData.append(UInt8(green * 255).data)
+        mutableData.append(UInt8(blue * 255).data)
+        return mutableData as Data
+    }
+}
+
 extension Input: DataConvertible {
     static let minimumSizeInBytes = 3
 
@@ -163,7 +194,7 @@ extension Input: DataConvertible {
     }
 }
 
-class DataWrapper {
+public class DataWrapper: NSObject {
     let underlying: Data
     var cursor = 0
 
