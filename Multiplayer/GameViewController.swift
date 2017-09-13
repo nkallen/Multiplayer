@@ -10,13 +10,15 @@ class GameViewController: UIViewController, SCNSceneRendererDelegate {
     @IBOutlet weak var sequenceLabel: UILabel!
     @IBOutlet var nonRecordingView: UIView!
 
-    var multiplayer: GameKitMultiplayer!
+    var multiplayer: GameKitMultiplayer<MyInputInterpreter>!
+    var inputInterpreter: MyInputInterpreter!
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        multiplayer = GameKitMultiplayer()
         setupScene()
+        inputInterpreter = MyInputInterpreter(scene: sceneView.scene!)
+        multiplayer = GameKitMultiplayer(inputInterpreter: inputInterpreter)
 
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         sceneView.addGestureRecognizer(tapGesture)
@@ -45,7 +47,9 @@ class GameViewController: UIViewController, SCNSceneRendererDelegate {
         let node = SCNNode(geometry: box)
         node.simdPosition = float3(0, 10, 0)
         node.physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
-        _ = multiplayer.localState.register(node)
+        _ = multiplayer.localState.register(node, priority: 1) { registered in
+            self.multiplayer.localState.input(.create(.pov, id: registered.id))
+        }
         sceneView.scene?.rootNode.addChildNode(node)
     }
 
@@ -58,7 +62,9 @@ class GameViewController: UIViewController, SCNSceneRendererDelegate {
         cameraNode.camera = SCNCamera()
         scene.rootNode.addChildNode(cameraNode)
         cameraNode.position = SCNVector3(x: 0, y: 0, z: 15)
-        _ = multiplayer.localState.register(cameraNode)
+        _ = multiplayer.localState.register(cameraNode, priority: 1) { registered in
+            self.multiplayer.localState.input(.create(.pov, id: registered.id))
+        }
 
         let lightNode = SCNNode()
         lightNode.light = SCNLight()
@@ -109,4 +115,33 @@ extension SCNMaterial {
         }
         return material
     }
+}
+
+// MARK: - Simple geometries
+
+func createAxesNode(quiverLength: CGFloat, quiverThickness: CGFloat) -> SCNNode {
+    let quiverThickness = (quiverLength / 50.0) * quiverThickness
+    let chamferRadius = quiverThickness / 2.0
+
+    let xQuiverBox = SCNBox(width: quiverLength, height: quiverThickness, length: quiverThickness, chamferRadius: chamferRadius)
+    xQuiverBox.materials = [SCNMaterial.material(withDiffuse: UIColor.red, respondsToLighting: false)]
+    let xQuiverNode = SCNNode(geometry: xQuiverBox)
+    xQuiverNode.position = SCNVector3Make(Float(quiverLength / 2.0), 0.0, 0.0)
+
+    let yQuiverBox = SCNBox(width: quiverThickness, height: quiverLength, length: quiverThickness, chamferRadius: chamferRadius)
+    yQuiverBox.materials = [SCNMaterial.material(withDiffuse: UIColor.green, respondsToLighting: false)]
+    let yQuiverNode = SCNNode(geometry: yQuiverBox)
+    yQuiverNode.position = SCNVector3Make(0.0, Float(quiverLength / 2.0), 0.0)
+
+    let zQuiverBox = SCNBox(width: quiverThickness, height: quiverThickness, length: quiverLength, chamferRadius: chamferRadius)
+    zQuiverBox.materials = [SCNMaterial.material(withDiffuse: UIColor.blue, respondsToLighting: false)]
+    let zQuiverNode = SCNNode(geometry: zQuiverBox)
+    zQuiverNode.position = SCNVector3Make(0.0, 0.0, Float(quiverLength / 2.0))
+
+    let quiverNode = SCNNode()
+    quiverNode.addChildNode(xQuiverNode)
+    quiverNode.addChildNode(yQuiverNode)
+    quiverNode.addChildNode(zQuiverNode)
+    quiverNode.name = "Axes"
+    return quiverNode
 }

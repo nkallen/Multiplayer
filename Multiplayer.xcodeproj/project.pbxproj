@@ -16,7 +16,8 @@
 		9E1A564D1F51F0B400A3773F /* MultiplayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1A564C1F51F0B400A3773F /* MultiplayerTests.swift */; };
 		9E1A56661F51F10100A3773F /* State.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1A56651F51F10100A3773F /* State.swift */; };
 		9E1A56681F51F9F200A3773F /* StateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1A56671F51F9F200A3773F /* StateTests.swift */; };
-		9E6781571F54ACCA00757916 /* Registration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E6781561F54ACCA00757916 /* Registration.swift */; };
+		9E57D8831F69B85100D07FAD /* WriteRegistration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8799021F69AE5900CC616B /* WriteRegistration.swift */; };
+		9E57D8841F69B88000D07FAD /* InputInterpreter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8799031F69AE5900CC616B /* InputInterpreter.swift */; };
 		9E6781591F54ADD500757916 /* Networking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E6781581F54ADD500757916 /* Networking.swift */; };
 		9E67815B1F54AE8500757916 /* Serialization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E67815A1F54AE8500757916 /* Serialization.swift */; };
 		9EA108C61F54B27100E371D5 /* ScreenRecordingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EA108C51F54B27100E371D5 /* ScreenRecordingManager.swift */; };
@@ -56,9 +57,10 @@
 		9E1A56531F51F0B400A3773F /* MultiplayerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MultiplayerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E1A56651F51F10100A3773F /* State.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = State.swift; sourceTree = "<group>"; };
 		9E1A56671F51F9F200A3773F /* StateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateTests.swift; sourceTree = "<group>"; };
-		9E6781561F54ACCA00757916 /* Registration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Registration.swift; sourceTree = "<group>"; };
 		9E6781581F54ADD500757916 /* Networking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking.swift; sourceTree = "<group>"; };
 		9E67815A1F54AE8500757916 /* Serialization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Serialization.swift; sourceTree = "<group>"; };
+		9E8799021F69AE5900CC616B /* WriteRegistration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WriteRegistration.swift; sourceTree = "<group>"; };
+		9E8799031F69AE5900CC616B /* InputInterpreter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputInterpreter.swift; sourceTree = "<group>"; };
 		9EA108C51F54B27100E371D5 /* ScreenRecordingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenRecordingManager.swift; sourceTree = "<group>"; };
 		9EAAF2081F520DFA007F210A /* GameKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GameKit.framework; path = System/Library/Frameworks/GameKit.framework; sourceTree = SDKROOT; };
 		9EBDC5041F54F4B000BD00F2 /* GameKitMultiplayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameKitMultiplayer.swift; sourceTree = "<group>"; };
@@ -147,7 +149,8 @@
 		9E6781551F54ACB000757916 /* StateSynchronization */ = {
 			isa = PBXGroup;
 			children = (
-				9E6781561F54ACCA00757916 /* Registration.swift */,
+				9E8799031F69AE5900CC616B /* InputInterpreter.swift */,
+				9E8799021F69AE5900CC616B /* WriteRegistration.swift */,
 				9E6781581F54ADD500757916 /* Networking.swift */,
 				9E1A56651F51F10100A3773F /* State.swift */,
 				9E67815A1F54AE8500757916 /* Serialization.swift */,
@@ -296,7 +299,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9E6781571F54ACCA00757916 /* Registration.swift in Sources */,
 				9E6781591F54ADD500757916 /* Networking.swift in Sources */,
 				9EA108C61F54B27100E371D5 /* ScreenRecordingManager.swift in Sources */,
 				9E1A563A1F51F0B300A3773F /* GameViewController.swift in Sources */,
@@ -304,6 +306,8 @@
 				9E1A56361F51F0B300A3773F /* AppDelegate.swift in Sources */,
 				9E67815B1F54AE8500757916 /* Serialization.swift in Sources */,
 				9E1A56661F51F10100A3773F /* State.swift in Sources */,
+				9E57D8831F69B85100D07FAD /* WriteRegistration.swift in Sources */,
+				9E57D8841F69B88000D07FAD /* InputInterpreter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

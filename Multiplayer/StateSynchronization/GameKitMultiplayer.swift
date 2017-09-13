@@ -61,7 +61,7 @@ class GameKitMultiplayer<I: InputInterpreter>: NSObject, GKMatchDelegate {
                     print("Error finding match", error as Any)
                 }
             }
-//            self.state = .sendingAndReceiving(GKMatch(), host: GKLocalPlayer.localPlayer(), localStartTime: Date.timeIntervalSinceReferenceDate, remoteStartTime: Date.timeIntervalSinceReferenceDate)
+            self.state = .sendingAndReceiving(GKMatch(), host: GKLocalPlayer.localPlayer(), localStartTime: Date.timeIntervalSinceReferenceDate, remoteStartTime: Date.timeIntervalSinceReferenceDate)
         case .waitingForLogin:
             login { self.sendMatchRequest(referenceNode: referenceNode, andThen: andThen) }
         default: fatalError("Already in match")
