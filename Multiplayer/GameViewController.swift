@@ -16,8 +16,6 @@ class GameViewController: UIViewController {
 //        _ = multiplayer.localState.register(cameraNode, priority: 1) { registered in
 //            self.multiplayer.localState.input(.create(.pov, id: registered.id))
 //        }
-
-
     }
 
     override func viewWillAppear(_ animated: Bool) {
