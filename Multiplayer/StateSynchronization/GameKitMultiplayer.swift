@@ -94,14 +94,6 @@ class GameKitMultiplayer<I: InputInterpreter>: NSObject, GKMatchDelegate {
                         self.state = .sending(match_, host: host, localStartTime: Date.timeIntervalSinceReferenceDate)
                         andThen()
                     }
-                    //                match.chooseBestHostingPlayer { best in
-                    //                    if let player = best {
-                    //                        print("found best")
-                    //                        self.host = best
-                    //                    } else {
-                    //                        print("error")
-                    //                    }
-                    //                }
                 }
             default:
                 fatalError("Connection change in invalid state")

@@ -19,6 +19,9 @@ class GameViewController: UIViewController, SCNSceneRendererDelegate {
         setupScene()
         inputInterpreter = MyInputInterpreter(scene: sceneView.scene!)
         multiplayer = GameKitMultiplayer(inputInterpreter: inputInterpreter)
+//        _ = multiplayer.localState.register(cameraNode, priority: 1) { registered in
+//            self.multiplayer.localState.input(.create(.pov, id: registered.id))
+//        }
 
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         sceneView.addGestureRecognizer(tapGesture)
@@ -62,9 +65,6 @@ class GameViewController: UIViewController, SCNSceneRendererDelegate {
         cameraNode.camera = SCNCamera()
         scene.rootNode.addChildNode(cameraNode)
         cameraNode.position = SCNVector3(x: 0, y: 0, z: 15)
-        _ = multiplayer.localState.register(cameraNode, priority: 1) { registered in
-            self.multiplayer.localState.input(.create(.pov, id: registered.id))
-        }
 
         let lightNode = SCNNode()
         lightNode.light = SCNLight()
