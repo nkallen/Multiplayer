@@ -18,6 +18,8 @@
 		9E1A56681F51F9F200A3773F /* StateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1A56671F51F9F200A3773F /* StateTests.swift */; };
 		9E57D8831F69B85100D07FAD /* WriteRegistration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8799021F69AE5900CC616B /* WriteRegistration.swift */; };
 		9E57D8841F69B88000D07FAD /* InputInterpreter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8799031F69AE5900CC616B /* InputInterpreter.swift */; };
+		9E57D8861F69C02800D07FAD /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E57D8851F69C02800D07FAD /* Utilities.swift */; };
+		9E57D8881F69C08E00D07FAD /* Scene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E57D8871F69C08D00D07FAD /* Scene.swift */; };
 		9E6781591F54ADD500757916 /* Networking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E6781581F54ADD500757916 /* Networking.swift */; };
 		9E67815B1F54AE8500757916 /* Serialization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E67815A1F54AE8500757916 /* Serialization.swift */; };
 		9EA108C61F54B27100E371D5 /* ScreenRecordingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EA108C51F54B27100E371D5 /* ScreenRecordingManager.swift */; };
@@ -57,6 +59,8 @@
 		9E1A56531F51F0B400A3773F /* MultiplayerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MultiplayerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E1A56651F51F10100A3773F /* State.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = State.swift; sourceTree = "<group>"; };
 		9E1A56671F51F9F200A3773F /* StateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateTests.swift; sourceTree = "<group>"; };
+		9E57D8851F69C02800D07FAD /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
+		9E57D8871F69C08D00D07FAD /* Scene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scene.swift; sourceTree = "<group>"; };
 		9E6781581F54ADD500757916 /* Networking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking.swift; sourceTree = "<group>"; };
 		9E67815A1F54AE8500757916 /* Serialization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Serialization.swift; sourceTree = "<group>"; };
 		9E8799021F69AE5900CC616B /* WriteRegistration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WriteRegistration.swift; sourceTree = "<group>"; };
@@ -124,6 +128,8 @@
 				9E1A56401F51F0B300A3773F /* LaunchScreen.storyboard */,
 				9E1A56431F51F0B300A3773F /* Info.plist */,
 				9EA108C51F54B27100E371D5 /* ScreenRecordingManager.swift */,
+				9E57D8851F69C02800D07FAD /* Utilities.swift */,
+				9E57D8871F69C08D00D07FAD /* Scene.swift */,
 			);
 			path = Multiplayer;
 			sourceTree = "<group>";
@@ -307,7 +313,9 @@
 				9E67815B1F54AE8500757916 /* Serialization.swift in Sources */,
 				9E1A56661F51F10100A3773F /* State.swift in Sources */,
 				9E57D8831F69B85100D07FAD /* WriteRegistration.swift in Sources */,
+				9E57D8861F69C02800D07FAD /* Utilities.swift in Sources */,
 				9E57D8841F69B88000D07FAD /* InputInterpreter.swift in Sources */,
+				9E57D8881F69C08E00D07FAD /* Scene.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -10,12 +10,91 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Multiplayer/StateSynchronization/GameKitMultiplayer.swift"
-            timestampString = "527023766.163342"
+            timestampString = "527025088.310372"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "100"
             endingLineNumber = "100"
             landmarkName = "match(_:player:didChange:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Multiplayer/Scene.swift"
+            timestampString = "527025088.310442"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "7"
+            endingLineNumber = "7"
+            landmarkName = "init(coder:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  shouldBeEnabled = "No"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "default argument 1 of Multiplayer.SceneView.init(frame: __C.CGRect, options: Swift.Optional&lt;Swift.Dictionary&lt;Swift.String, Any&gt;&gt;) -&gt; Multiplayer.SceneView"
+                  moduleName = "Multiplayer"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/nickkallen/Documents/Multiplayer/Multiplayer/Scene.swift"
+                  timestampString = "527025047.218139"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "7"
+                  endingLineNumber = "7"
+                  offsetFromSymbolStart = "4">
+               </Location>
+               <Location
+                  shouldBeEnabled = "No"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Multiplayer.SceneView.__allocating_init(frame: __C.CGRect, options: Swift.Optional&lt;Swift.Dictionary&lt;Swift.String, Any&gt;&gt;) -&gt; Multiplayer.SceneView"
+                  moduleName = "Multiplayer"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/nickkallen/Documents/Multiplayer/Multiplayer/Scene.swift"
+                  timestampString = "527025047.219598"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "0"
+                  endingLineNumber = "0"
+                  offsetFromSymbolStart = "14">
+               </Location>
+               <Location
+                  shouldBeEnabled = "No"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Multiplayer.SceneView.init(frame: __C.CGRect, options: Swift.Optional&lt;Swift.Dictionary&lt;Swift.String, Any&gt;&gt;) -&gt; Multiplayer.SceneView"
+                  moduleName = "Multiplayer"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/nickkallen/Documents/Multiplayer/Multiplayer/Scene.swift"
+                  timestampString = "527025047.221832"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "5"
+                  endingLineNumber = "5"
+                  offsetFromSymbolStart = "80">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Multiplayer/GameViewController.swift"
+            timestampString = "527025088.310663"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "17"
+            endingLineNumber = "17"
+            landmarkName = "viewDidLoad()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
