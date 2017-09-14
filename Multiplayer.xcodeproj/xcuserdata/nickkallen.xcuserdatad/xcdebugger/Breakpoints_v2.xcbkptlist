@@ -10,7 +10,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Multiplayer/StateSynchronization/GameKitMultiplayer.swift"
-            timestampString = "527035402.459965"
+            timestampString = "527094450.254094"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "100"
@@ -26,7 +26,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Multiplayer/Scene.swift"
-            timestampString = "527035402.460036"
+            timestampString = "527094450.25416"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "11"
@@ -89,28 +89,12 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Multiplayer/GameViewController.swift"
-            timestampString = "527035402.460569"
+            timestampString = "527094450.254583"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "14"
             endingLineNumber = "14"
             landmarkName = "viewDidLoad()"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "Multiplayer/Scene.swift"
-            timestampString = "527035402.460616"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "92"
-            endingLineNumber = "92"
-            landmarkName = "init(scene:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
